@@ -69,32 +69,32 @@ fn main() -> Result<()> {
                     child.kill()?;
                     child.wait()?;
                 }
-            },
-            Command::Update {
-                target,
-            } => {
-                match target.as_str() {
-                    "linux" => {
-                        ensure!(
-                            process::Command::new("pacman").args(["-Syu"]).status().expect("cannot launch pacman").success(),
-                            "cannot update linux"
-                        );
-                    },
-                    "cargo-temp" => {
-                        todo!();
-                    }
-                    "neovim" => {
-                        todo!();
-                    }
-                    "vscodium" => {
-                        todo!();
-                    }
-                    _ => println!("not implemented"),
+            }
+            Command::Update { target } => match target.as_str() {
+                "linux" => {
+                    ensure!(
+                        process::Command::new("pacman")
+                            .args(["-Syu"])
+                            .status()
+                            .expect("cannot launch pacman")
+                            .success(),
+                        "cannot update linux"
+                    );
                 }
+                "cargo-temp" => {
+                    todo!();
+                }
+                "neovim" => {
+                    todo!();
+                }
+                "vscodium" => {
+                    todo!();
+                }
+                _ => println!("not implemented"),
             },
             Command::Install => {
                 todo!();
-            },
+            }
         }
     }
 
