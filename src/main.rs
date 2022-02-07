@@ -1,18 +1,16 @@
-use anyhow;
 use std::{env, process};
-use structopt::StructOpt;
 
-#[derive(StructOpt)]
+#[derive(clap::Parser)]
 struct Opt {
     /// Path used by subcommands
-    #[structopt(parse(from_os_str))]
+    #[clap(parse(from_os_str))]
     path: Option<std::path::PathBuf>,
 
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     cmd: SubCommand,
 }
 
-#[derive(StructOpt)]
+#[derive(clap::Parser)]
 enum SubCommand {
     /// Launch a given program and open a new terminal at the same current
     /// directory.
@@ -20,17 +18,17 @@ enum SubCommand {
         /// Launch the given command.
         ///
         /// If nothing is
-        #[structopt(short = "a", long = "args")]
+        #[clap(short = 'a', long = "args")]
         /// The arguments given to the launched program.
         command: Vec<String>,
         /// Do not launch terminal along the launched program.
-        #[structopt(long)]
+        #[clap(long)]
         no_terminal: bool,
     },
 }
 
 fn main() -> anyhow::Result<()> {
-    let opt = Opt::from_args();
+    let opt: Opt = clap::Parser::parse();
 
     match opt.cmd {
         SubCommand::Launch {
@@ -38,7 +36,7 @@ fn main() -> anyhow::Result<()> {
             no_terminal,
         } => {
             let working_dir = if let Some(current_dir) = opt.path {
-                current_dir.to_path_buf()
+                current_dir
             } else {
                 env::current_dir().expect("cannot get current directory")
             };
