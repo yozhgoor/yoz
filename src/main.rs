@@ -34,21 +34,21 @@ fn main() -> anyhow::Result<()> {
 
     if opt.log {
         env_logger::builder()
-        .filter(Some("yoz"), log::LevelFilter::Error)
-        .init();
+            .filter(Some("yoz"), log::LevelFilter::Error)
+            .init();
     }
+
+    let working_dir = if let Some(current_dir) = opt.path {
+        current_dir
+    } else {
+        std::env::current_dir().expect("cannot get current directory")
+    };
 
     match opt.cmd {
         SubCommand::Launch {
             command,
             no_terminal,
         } => {
-            let working_dir = if let Some(current_dir) = opt.path {
-                current_dir
-            } else {
-                std::env::current_dir().expect("cannot get current directory")
-            };
-
             let mut main_process = if command.is_empty() {
                 let mut main_process = std::process::Command::new("nvim");
                 main_process.current_dir(&working_dir);
@@ -97,8 +97,10 @@ fn main() -> anyhow::Result<()> {
         SubCommand::Check => {
             log::info!("Launching `cargo check`");
             match std::process::Command::new("cargo")
-                    .arg("check")
-                    .status() {
+                .current_dir(&working_dir)
+                .arg("check")
+                .status()
+            {
                 Ok(exit_status) => {
                     if exit_status.success() {
                         log::info!("`cargo check`: Ok.")
@@ -113,13 +115,18 @@ fn main() -> anyhow::Result<()> {
 
             log::info!("Launching `cargo test --workspace`");
             match std::process::Command::new("cargo")
-                    .args(["test", "--workspace"])
-                    .status() {
+                .current_dir(&working_dir)
+                .args(["test", "--workspace"])
+                .status()
+            {
                 Ok(exit_status) => {
                     if exit_status.success() {
                         log::info!("`cargo check: Ok.")
                     } else {
-                        log::error!("`cargo test --workspace` wasn't successful: {}", exit_status)
+                        log::error!(
+                            "`cargo test --workspace` wasn't successful: {}",
+                            exit_status
+                        )
                     }
                 }
                 Err(err) => {
@@ -129,13 +136,18 @@ fn main() -> anyhow::Result<()> {
 
             log::info!("Launching `cargo fmt --all -- --check`");
             match std::process::Command::new("cargo")
-                    .args(["fmt", "--all", "--", "--check"])
-                    .status() {
+                .current_dir(&working_dir)
+                .args(["fmt", "--all", "--", "--check"])
+                .status()
+            {
                 Ok(exit_status) => {
                     if exit_status.success() {
                         log::info!("`cargo fmt --all -- --check`: Ok.")
                     } else {
-                        log::error!("`cargo fmt --all -- --check` wasn't successful: {}", exit_status)
+                        log::error!(
+                            "`cargo fmt --all -- --check` wasn't successful: {}",
+                            exit_status
+                        )
                     }
                 }
                 Err(err) => {
@@ -145,13 +157,18 @@ fn main() -> anyhow::Result<()> {
 
             log::info!("Launching `cargo clippy -- -D warnings");
             match std::process::Command::new("cargo")
-                    .args(["clippy", "--", "-D", "warnings"])
-                    .status() {
+                .current_dir(&working_dir)
+                .args(["clippy", "--", "-D", "warnings"])
+                .status()
+            {
                 Ok(exit_status) => {
                     if exit_status.success() {
                         log::info!("`cargo clippy -- -D warnings`: Ok.")
                     } else {
-                        log::error!("`cargo clippy -- -D warnings` wasn't successful: {}", exit_status)
+                        log::error!(
+                            "`cargo clippy -- -D warnings` wasn't successful: {}",
+                            exit_status
+                        )
                     }
                 }
                 Err(err) => {
