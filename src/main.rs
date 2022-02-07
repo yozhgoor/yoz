@@ -1,4 +1,4 @@
-use anyhow::{ensure, Result};
+use anyhow;
 use std::{env, process};
 use structopt::StructOpt;
 
@@ -18,51 +18,53 @@ enum Opt {
     },
 }
 
-fn main() -> Result<()> {
-    let cli = Cli::from_args();
+fn main() -> anyhow::Result<()> {
+    let opt = Opt::from_args();
 
-    let working_dir = cli
-        .path
-        .unwrap_or_else(|| env::current_dir().expect("cannot get current directory"));
+    match opt {
+        Opt::Launch {
+            program,
+            args,
+            no_terminal,
+        } => {
 
-    if let Some(command) = cli.cmd {
-        match command {
-            Command::Launch {
-                program,
-                args,
-                no_terminal,
-            } => {
-                let terminal_process = if !no_terminal {
-                    match process::Command::new("alacritty")
-                        .arg("--working-directory")
-                        .arg(working_dir.as_os_str())
-                        .spawn()
-                    {
-                        Ok(child) => Some(child),
-                        Err(err) => {
-                            println!("an error occurred when launching alacritty: {err}");
-                            None
-                        }
+            let mut main_process = process::Command::new(&program);
+            main_process.args(args);
+
+            let working_dir = if let Some(current_dir) = main_process.get_current_dir() {
+                current_dir.to_path_buf()
+            } else {
+                env::current_dir().expect("cannot get current directory")
+            };
+
+            let terminal_process = if !no_terminal {
+                match process::Command::new("alacritty")
+                    .arg("--working-directory")
+                    .arg(working_dir.as_os_str())
+                    .spawn()
+                {
+                    Ok(child) => Some(child),
+                    Err(err) => {
+                        println!("an error occurred when launching alacritty: {err}");
+                        None
                     }
-                } else {
-                    println!("use directly {} instead", &program);
-                    None
-                };
-
-                ensure!(
-                    process::Command::new(&program)
-                        .current_dir(&working_dir)
-                        .args(args)
-                        .status()
-                        .expect("cannot launch {&program}")
-                        .success(),
-                    "launch command failed"
-                );
-
-                if let Some(mut child) = terminal_process {
-                    child.kill()?;
-                    child.wait()?;
                 }
+            } else {
+                println!("use directly {} instead", &program);
+                None
+            };
+
+            anyhow::ensure!(
+                main_process
+                    .status()
+                    .expect("cannot launch main process")
+                    .success(),
+                "launch command failed"
+            );
+
+            if let Some(mut child) = terminal_process {
+                child.kill()?;
+                child.wait()?;
             }
         }
     }
