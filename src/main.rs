@@ -3,26 +3,19 @@ use std::{env, process};
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
-struct Cli {
-    #[structopt(parse(from_os_str))]
-    path: Option<std::path::PathBuf>,
-    #[structopt(subcommand)]
-    cmd: Option<Command>,
-}
-
-#[derive(StructOpt)]
-enum Command {
+enum Opt {
+    /// Launch a given program and open a new terminal at the same current
+    /// directory.
     Launch {
+        /// The program that will be launched.
         program: String,
-        #[structopt(long)]
+        #[structopt(short = "a", long = "args")]
+        /// The arguments given to the launched program.
         args: Vec<String>,
+        /// Do not launch terminal along the launched program.
         #[structopt(long)]
         no_terminal: bool,
     },
-    Update {
-        target: String,
-    },
-    Install,
 }
 
 fn main() -> Result<()> {
@@ -52,6 +45,7 @@ fn main() -> Result<()> {
                         }
                     }
                 } else {
+                    println!("use directly {} instead", &program);
                     None
                 };
 
@@ -69,31 +63,6 @@ fn main() -> Result<()> {
                     child.kill()?;
                     child.wait()?;
                 }
-            }
-            Command::Update { target } => match target.as_str() {
-                "linux" => {
-                    ensure!(
-                        process::Command::new("pacman")
-                            .args(["-Syu"])
-                            .status()
-                            .expect("cannot launch pacman")
-                            .success(),
-                        "cannot update linux"
-                    );
-                }
-                "cargo-temp" => {
-                    todo!();
-                }
-                "neovim" => {
-                    todo!();
-                }
-                "vscodium" => {
-                    todo!();
-                }
-                _ => println!("not implemented"),
-            },
-            Command::Install => {
-                todo!();
             }
         }
     }
