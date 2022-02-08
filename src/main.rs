@@ -1,24 +1,17 @@
 use std::{env, process};
 
 #[derive(clap::Parser)]
-struct Opt {
-    /// Path used by subcommands
-    #[clap(parse(from_os_str))]
-    path: Option<std::path::PathBuf>,
-
-    #[clap(subcommand)]
-    cmd: SubCommand,
-}
-
-#[derive(clap::Parser)]
-enum SubCommand {
+enum Opt {
     /// Launch a given program and open a new terminal at the same current
     /// directory.
     Launch {
+        /// path used to set the current directory of the processes.
+        #[clap(parse(from_os_str))]
+        path: Option<std::path::PathBuf>,
         /// Launch the given command.
         ///
-        /// If nothing is
-        #[clap(short = 'a', long = "args")]
+        /// If nothing is provided, `nvim .` will be used.
+        #[clap(short = 'x', long = "command")]
         /// The arguments given to the launched program.
         command: Vec<String>,
         /// Do not launch terminal along the launched program.
@@ -30,12 +23,13 @@ enum SubCommand {
 fn main() -> anyhow::Result<()> {
     let opt: Opt = clap::Parser::parse();
 
-    match opt.cmd {
-        SubCommand::Launch {
+    match opt {
+        Opt::Launch {
+            path,
             command,
             no_terminal,
         } => {
-            let working_dir = if let Some(current_dir) = opt.path {
+            let working_dir = if let Some(current_dir) = path {
                 current_dir
             } else {
                 env::current_dir().expect("cannot get current directory")
