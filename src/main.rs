@@ -29,8 +29,12 @@ fn main() -> anyhow::Result<()> {
             command,
             no_terminal,
         } => {
-            let working_dir = if let Some(current_dir) = path {
-                current_dir
+            let working_dir = if let Some(path) = path {
+                if path.exists() {
+                    path
+                } else {
+                    anyhow::bail!("{} doesn't exist", path.display());
+                }
             } else {
                 env::current_dir().expect("cannot get current directory")
             };
