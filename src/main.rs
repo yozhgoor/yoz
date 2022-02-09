@@ -1,54 +1,46 @@
 #[derive(clap::Parser)]
-struct Opt {
-    /// Path used by subcommands
-    #[clap(parse(from_os_str))]
-    path: Option<std::path::PathBuf>,
-    #[clap(short = 'l', long = "log")]
-    log: bool,
-
-    #[clap(subcommand)]
-    cmd: SubCommand,
-}
-
-#[derive(clap::Parser)]
-enum SubCommand {
+enum Opt {
     /// Launch a given program and open a new terminal at the same current
     /// directory.
     Launch {
+        /// Working directory of the processes.
+        working_dir: Option<std::path::PathBuf>,
         /// Launch the given command.
         ///
-        /// If nothing is
-        #[clap(short = 'a', long = "args")]
-        /// The arguments given to the launched program.
+        /// If nothing is provided, `nvim .` will be used.
+        #[clap(short = 'x', long = "command")]
         command: Vec<String>,
         /// Do not launch terminal along the launched program.
         #[clap(long)]
         no_terminal: bool,
     },
     /// Launch the checks command needed for a Rust project.
-    Check,
+    Check {
+        /// Path of the project that will be checked.
+        ///
+        /// This path must point to a Rust project.
+        working_dir: Option<std::path::PathBuf>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
     let opt: Opt = clap::Parser::parse();
-
-    if opt.log {
-        env_logger::builder()
-            .filter(Some("yoz"), log::LevelFilter::Error)
-            .init();
-    }
-
-    let working_dir = if let Some(current_dir) = opt.path {
-        current_dir
-    } else {
-        std::env::current_dir().expect("cannot get current directory")
-    };
-
-    match opt.cmd {
-        SubCommand::Launch {
+    match opt {
+        Opt::Launch {
+            working_dir,
             command,
             no_terminal,
         } => {
+            let working_dir = if let Some(path) = working_dir {
+                if path.exists() {
+                    path
+                } else {
+                    anyhow::bail!("{} doesn't exist", path.display());
+                }
+            } else {
+                std::env::current_dir().expect("cannot get current directory")
+            };
+
             let mut main_process = if command.is_empty() {
                 let mut main_process = std::process::Command::new("nvim");
                 main_process.current_dir(&working_dir);
@@ -94,7 +86,17 @@ fn main() -> anyhow::Result<()> {
                 child.wait()?;
             }
         }
-        SubCommand::Check => {
+        Opt::Check { working_dir } => {
+            let working_dir = if let Some(path) = working_dir {
+                if path.exists() {
+                    path
+                } else {
+                    anyhow::bail!("{} doesn't exist", path.display());
+                }
+            } else {
+                std::env::current_dir().expect("cannot get current directory")
+            };
+
             log::info!("Launching `cargo check`");
             match std::process::Command::new("cargo")
                 .current_dir(&working_dir)
