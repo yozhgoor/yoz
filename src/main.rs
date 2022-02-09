@@ -4,7 +4,7 @@ enum Opt {
     /// directory.
     Launch {
         /// Working directory of the processes.
-        working_dir: Option<std::path::PathBuf>,
+        path: Option<std::path::PathBuf>,
         /// Launch the given command.
         ///
         /// If nothing is provided, `nvim .` will be used.
@@ -15,31 +15,53 @@ enum Opt {
         no_terminal: bool,
     },
     /// Launch the checks command needed for a Rust project.
-    Check {
+    Checks {
         /// Path of the project that will be checked.
         ///
         /// This path must point to a Rust project.
-        working_dir: Option<std::path::PathBuf>,
+        path: Option<std::path::PathBuf>,
+        /// Arguments given to the `cargo check` command.
+        ///
+        /// The default is `cargo check --workspace --all-features`.
+        #[clap(long)]
+        check: Vec<String>,
+        /// Arguments given to the `cargo fmt` command.
+        ///
+        /// The default is `cargo fmt --all --check`.
+        #[clap(long)]
+        fmt: Vec<String>,
+        /// Arguments given to the `cargo test` command.
+        ///
+        /// The default is `cargo test --workspace --all-features`.
+        #[clap(long)]
+        test: Vec<String>,
+        /// Arguments given to the `cargo clippy` command.
+        ///
+        /// The default is `cargo clippy --all --tests -- -D warnings`.
+        #[clap(long)]
+        clippy: Vec<String>,
+        /// Remove the target directory.
+        #[clap(long)]
+        clean: bool,
     },
 }
 
 fn main() -> anyhow::Result<()> {
     let opt: Opt = clap::Parser::parse();
+
+    env_logger::builder()
+        .format_timestamp(None)
+        .format_module_path(false)
+        .filter(Some("yoz"), log::LevelFilter::Info)
+        .init();
+
     match opt {
         Opt::Launch {
-            working_dir,
+            path,
             command,
             no_terminal,
         } => {
-            let working_dir = if let Some(path) = working_dir {
-                if path.exists() {
-                    path
-                } else {
-                    anyhow::bail!("{} doesn't exist", path.display());
-                }
-            } else {
-                std::env::current_dir().expect("cannot get current directory")
-            };
+            let working_dir = set_working_dir(path)?;
 
             let mut main_process = if command.is_empty() {
                 let mut main_process = std::process::Command::new("nvim");
@@ -69,7 +91,7 @@ fn main() -> anyhow::Result<()> {
                     }
                 }
             } else {
-                println!("Use the command directly instead");
+                log::info!("Use the command directly instead");
                 None
             };
 
@@ -85,100 +107,123 @@ fn main() -> anyhow::Result<()> {
                 child.kill()?;
                 child.wait()?;
             }
+
+            Ok(())
         }
-        Opt::Check { working_dir } => {
-            let working_dir = if let Some(path) = working_dir {
-                if path.exists() {
-                    path
+        Opt::Checks {
+            path,
+            check,
+            fmt,
+            test,
+            clippy,
+            clean,
+        } => {
+            let working_dir = set_working_dir(path)?;
+
+            if clean {
+                if std::process::Command::new("cargo")
+                    .current_dir(&working_dir)
+                    .arg("clean")
+                    .status()
+                    .expect("cannot launch `cargo clean`")
+                    .success()
+                {
+                    log::info!("Cleaned");
                 } else {
-                    anyhow::bail!("{} doesn't exist", path.display());
+                    log::error!("command `cargo clean` failed");
                 }
+            }
+
+            let mut check = if !check.is_empty() {
+                let mut command = std::process::Command::new("cargo");
+                command.current_dir(&working_dir).args(check);
+
+                command
             } else {
-                std::env::current_dir().expect("cannot get current directory")
+                let mut command = std::process::Command::new("cargo");
+                command
+                    .current_dir(&working_dir)
+                    .args(["check", "--workspace", "--all-features"]);
+
+                command
             };
 
-            log::info!("Launching `cargo check`");
-            match std::process::Command::new("cargo")
-                .current_dir(&working_dir)
-                .arg("check")
-                .status()
-            {
-                Ok(exit_status) => {
-                    if exit_status.success() {
-                        log::info!("`cargo check`: Ok.")
-                    } else {
-                        log::error!("`cargo check` wasn't successful {}", exit_status)
-                    }
-                }
-                Err(err) => {
-                    log::error!("Cannot launch `cargo check`: {}", err)
-                }
-            }
+            let mut test = if !test.is_empty() {
+                let mut command = std::process::Command::new("cargo");
+                command.current_dir(&working_dir).args(test);
 
-            log::info!("Launching `cargo test --workspace`");
-            match std::process::Command::new("cargo")
-                .current_dir(&working_dir)
-                .args(["test", "--workspace"])
-                .status()
-            {
-                Ok(exit_status) => {
-                    if exit_status.success() {
-                        log::info!("`cargo check: Ok.")
-                    } else {
-                        log::error!(
-                            "`cargo test --workspace` wasn't successful: {}",
-                            exit_status
-                        )
-                    }
-                }
-                Err(err) => {
-                    log::error!("cannot launch `cargo test --workspace`: {}", err)
-                }
-            }
+                command
+            } else {
+                let mut command = std::process::Command::new("cargo");
+                command
+                    .current_dir(&working_dir)
+                    .args(["test", "--workspace", "--all-features"]);
 
-            log::info!("Launching `cargo fmt --all -- --check`");
-            match std::process::Command::new("cargo")
-                .current_dir(&working_dir)
-                .args(["fmt", "--all", "--", "--check"])
-                .status()
-            {
-                Ok(exit_status) => {
-                    if exit_status.success() {
-                        log::info!("`cargo fmt --all -- --check`: Ok.")
-                    } else {
-                        log::error!(
-                            "`cargo fmt --all -- --check` wasn't successful: {}",
-                            exit_status
-                        )
-                    }
-                }
-                Err(err) => {
-                    log::error!("cannot launch `cargo fmt --all -- --check`: {}", err)
-                }
-            }
+                command
+            };
 
-            log::info!("Launching `cargo clippy -- -D warnings");
-            match std::process::Command::new("cargo")
-                .current_dir(&working_dir)
-                .args(["clippy", "--", "-D", "warnings"])
-                .status()
-            {
-                Ok(exit_status) => {
-                    if exit_status.success() {
-                        log::info!("`cargo clippy -- -D warnings`: Ok.")
-                    } else {
-                        log::error!(
-                            "`cargo clippy -- -D warnings` wasn't successful: {}",
-                            exit_status
-                        )
-                    }
-                }
-                Err(err) => {
-                    log::error!("cannot launch `cargo clippy -- -D warnings`: {}", err)
-                }
-            }
+            let mut fmt = if !fmt.is_empty() {
+                let mut command = std::process::Command::new("cargo");
+                command.current_dir(&working_dir).args(fmt);
+
+                command
+            } else {
+                let mut command = std::process::Command::new("cargo");
+                command
+                    .current_dir(&working_dir)
+                    .args(["fmt", "--all", "--check"]);
+
+                command
+            };
+
+            let mut clippy = if !clippy.is_empty() {
+                let mut command = std::process::Command::new("cargo");
+                command.current_dir(&working_dir).args(clippy);
+
+                command
+            } else {
+                let mut command = std::process::Command::new("cargo");
+                command
+                    .current_dir(&working_dir)
+                    .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
+
+                command
+            };
+
+            if check.output()?.status.success() {
+                log::info!("cargo check : Ok");
+            } else {
+                log::error!("cargo check : Nope");
+            };
+
+            if test.output()?.status.success() {
+                log::info!("cargo test  : Ok");
+            } else {
+                log::error!("cargo test  : Nope");
+            };
+
+            if fmt.output()?.status.success() {
+                log::info!("cargo fmt   : Ok");
+            } else {
+                log::error!("cargo fmt   : Nope");
+            };
+
+            if clippy.output()?.status.success() {
+                log::info!("cargo clippy: Ok");
+            } else {
+                log::error!("cargo clippy: Nope");
+            };
+
+            Ok(())
         }
     }
+}
 
-    Ok(())
+fn set_working_dir(path: Option<std::path::PathBuf>) -> anyhow::Result<std::path::PathBuf> {
+    let working_dir = match path {
+        Some(path) if path.exists() => path,
+        _ => std::env::current_dir().expect("cannot get current directory"),
+    };
+
+    Ok(working_dir)
 }
