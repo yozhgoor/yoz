@@ -2,6 +2,12 @@
 name = "yoz"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "personal area-51"
+homepage = "https://github.com/rustminded/xtask-wasm"
+documentation = "https://docs.rs/xtask-wasm"
+readme = "README.md"
+include = ["src/**/*.rs", "README.md", "LICENSE.Apache-2.0", "LICENSE.MIT"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,3 +17,5 @@ chrono = "0.4"
 clap = { version = "3.0", features = ["derive"] }
 env_logger = "0.9"
 log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"

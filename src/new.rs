@@ -31,29 +31,7 @@ impl New {
         std::fs::create_dir(&project_dir_path)?;
 
         if !self.no_license {
-            use chrono::Datelike;
-
-            let year = chrono::Local::now().date().year();
-            let fullname = self
-                .full_name
-                .unwrap_or_else(|| "Yohan Boogaert".to_string());
-
-            std::fs::write(
-                &project_dir_path.join("LICENSE.mit"),
-                format!(
-                    include_str!("../templates/mit"),
-                    year = year,
-                    fullname = fullname
-                ),
-            )?;
-            std::fs::write(
-                &project_dir_path.join("LICENSE.Apache-2.0"),
-                format!(
-                    include_str!("../templates/apache"),
-                    year = year,
-                    fullname = fullname
-                ),
-            )?;
+            add_licenses(project_dir_path, self.full_name)?;
         }
 
         if !self.no_ci {
@@ -62,4 +40,33 @@ impl New {
 
         Ok(())
     }
+}
+
+use chrono::Datelike;
+
+fn add_licenses(
+    project_dir_path: impl AsRef<std::path::Path>,
+    full_name: Option<String>,
+) -> anyhow::Result<()> {
+    let year = chrono::Local::now().date().year();
+    let full_name = full_name.unwrap_or_else(|| "Yohan Boogaert".to_string());
+
+    std::fs::write(
+        project_dir_path.as_ref().join("LICENSE.MIT"),
+        format!(
+            include_str!("../templates/mit"),
+            year = year,
+            full_name = full_name
+        ),
+    )?;
+    std::fs::write(
+        project_dir_path.as_ref().join("LICENSE.Apache-2.0"),
+        format!(
+            include_str!("../templates/apache"),
+            year = year,
+            full_name = full_name
+        ),
+    )?;
+
+    Ok(())
 }
