@@ -31,7 +31,9 @@ impl New {
         std::fs::create_dir(&project_dir_path)?;
 
         if !self.no_license {
-            let year = chrono::Utc::today();
+            use chrono::Datelike;
+
+            let year = chrono::Local::now().date().year();
             let fullname = self
                 .full_name
                 .unwrap_or_else(|| "Yohan Boogaert".to_string());
