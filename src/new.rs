@@ -178,7 +178,7 @@ jobs:
         )?;
     }
 
-    let mut workflow = workflow.trim().to_string();
+    let mut workflow = workflow.trim_end().to_string();
 
     write!(
         workflow,
@@ -229,7 +229,7 @@ jobs:
         )?;
     }
 
-    let mut workflow = workflow.trim().to_string();
+    let mut workflow = workflow.trim_end().to_string();
 
     write!(
         workflow,
@@ -388,7 +388,7 @@ jobs:
         files = files
     )?;
 
-    let mut workflow = workflow.trim().to_string();
+    let mut workflow = workflow.trim_end().to_string();
 
     write!(
         workflow,
