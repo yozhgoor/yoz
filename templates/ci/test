@@ -11,4 +11,3 @@
         with:
           command: test
           args: --workspace
-

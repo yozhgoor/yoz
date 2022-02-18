@@ -153,7 +153,7 @@ jobs:
 
     write!(workflow, "{}", header,)?;
 
-    write!(
+    writeln!(
         workflow,
         include_str!("../templates/ci/test"),
         job_name = "test",
@@ -161,7 +161,7 @@ jobs:
     )?;
 
     if !no_windows {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/test"),
             job_name = "test-windows",
@@ -170,7 +170,7 @@ jobs:
     }
 
     if !no_osx {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/test"),
             job_name = "test-osx",
@@ -197,7 +197,7 @@ jobs:
     let mut workflow = String::new();
 
     write!(workflow, "{}", header,)?;
-    write!(
+    writeln!(
         workflow,
         include_str!("../templates/ci/test_and_lint"),
         job_name = "test-and-lint",
@@ -205,7 +205,7 @@ jobs:
     )?;
 
     if !no_windows {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/test"),
             job_name = "test-windows",
@@ -214,7 +214,7 @@ jobs:
     }
 
     if !no_osx {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/test"),
             job_name = "test-osx",
@@ -247,7 +247,7 @@ jobs:
     let mut workflow = String::new();
 
     write!(workflow, "{}", header,)?;
-    write!(
+    writeln!(
         workflow,
         include_str!("../templates/ci/release_build_with_strip"),
         job_name = build_linux_name,
@@ -259,7 +259,7 @@ jobs:
     )?;
 
     if !no_windows {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/release_build"),
             job_name = build_windows_name,
@@ -272,7 +272,7 @@ jobs:
     }
 
     if !no_osx {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/release_build"),
             job_name = build_osx_name,
@@ -303,7 +303,7 @@ jobs:
         needs = needs,
     )?;
 
-    write!(
+    writeln!(
         workflow,
         include_str!("../templates/ci/release_step"),
         build_name = build_linux_name,
@@ -313,7 +313,7 @@ jobs:
     )?;
 
     if !no_windows {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/release_step"),
             build_name = build_windows_name,
@@ -324,7 +324,7 @@ jobs:
     }
 
     if !no_osx {
-        write!(
+        writeln!(
             workflow,
             include_str!("../templates/ci/release_step"),
             build_name = build_osx_name,

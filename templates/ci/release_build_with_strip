@@ -18,4 +18,3 @@
           name: {build_name}
           path: |
             target/{target}/release/{project_name}
-
