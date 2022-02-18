@@ -1,4 +1,4 @@
-{job_name}:
+  {job_name}:
     runs-on: {platform}
     steps:
       - name: Checkout source

@@ -1,14 +1,16 @@
-name: PR
+name: main
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
+  schedule:
+    - cron: 0 0 1 * *
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test-and-lint:
+test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -22,19 +24,7 @@ jobs:
           command: test
           args: --workspace
 
-      - name: rustfmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-      - name: clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -- -D warnings
-
-  test-windows:
+test-windows:
     runs-on: windows-latest
     steps:
       - name: Checkout source
@@ -48,7 +38,7 @@ jobs:
           command: test
           args: --workspace
 
-  test-osx:
+test-osx:
     runs-on: windows-latest
     steps:
       - name: Checkout source
@@ -61,3 +51,4 @@ jobs:
         with:
           command: test
           args: --workspace
+

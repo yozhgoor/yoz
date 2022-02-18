@@ -164,6 +164,8 @@ jobs:
         )?;
     }
 
+    let workflow = strip_trailing_newline(workflow);
+
     Ok(workflow)
 }
 
@@ -207,6 +209,8 @@ jobs:
             platform = "windows-latest"
         )?;
     }
+
+    let workflow = strip_trailing_newline(workflow);
 
     Ok(workflow)
 }
@@ -360,5 +364,15 @@ jobs:
         files = files
     )?;
 
+    let workflow = strip_trailing_newline(workflow);
+
     Ok(workflow)
+}
+
+fn strip_trailing_newline(input: String) -> String {
+    input
+        .strip_suffix("\r\n")
+        .or(input.strip_suffix("\n"))
+        .unwrap_or(&input)
+        .to_string()
 }
