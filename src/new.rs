@@ -180,10 +180,7 @@ jobs:
 
     let mut workflow = workflow.trim_end().to_string();
 
-    write!(
-        workflow,
-        "\n"
-    )?;
+    write!(workflow, "\n")?;
 
     Ok(workflow)
 }
@@ -231,10 +228,7 @@ jobs:
 
     let mut workflow = workflow.trim_end().to_string();
 
-    write!(
-        workflow,
-        "\n"
-    )?;
+    write!(workflow, "\n")?;
 
     Ok(workflow)
 }
@@ -390,10 +384,7 @@ jobs:
 
     let mut workflow = workflow.trim_end().to_string();
 
-    write!(
-        workflow,
-        "\n"
-    )?;
+    write!(workflow, "\n")?;
 
     Ok(workflow)
 }
