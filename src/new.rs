@@ -54,6 +54,20 @@ impl New {
             }
         }
 
+        if self.lib && self.xtask {
+            let mut lib_command = std::process::Command::new("cargo");
+            lib_command.args(["new", &self.name, "--lib"]);
+
+            let mut xtask_command = std::process::Command::new("cargo");
+            xtask_command.args(["new", "xtask"]);
+        } else if !self.lib && self.xtask {
+            todo!("xtask bin");
+        } else if self.lib && !self.xtask {
+            todo!("lib");
+        } else {
+            todo!("bin");
+        }
+
         Ok(())
     }
 }
@@ -164,7 +178,7 @@ jobs:
         )?;
     }
 
-    let workflow = strip_trailing_newline(workflow);
+    let workflow = workflow.trim_end().to_string();
 
     Ok(workflow)
 }
@@ -210,7 +224,7 @@ jobs:
         )?;
     }
 
-    let workflow = strip_trailing_newline(workflow);
+    let workflow = workflow.trim_end().to_string();
 
     Ok(workflow)
 }
@@ -364,15 +378,7 @@ jobs:
         files = files
     )?;
 
-    let workflow = strip_trailing_newline(workflow);
+    let workflow = workflow.trim_end().to_string();
 
     Ok(workflow)
-}
-
-fn strip_trailing_newline(input: String) -> String {
-    input
-        .strip_suffix("\r\n")
-        .or_else(|| input.strip_suffix('\n'))
-        .unwrap_or(&input)
-        .to_string()
 }
