@@ -178,8 +178,6 @@ jobs:
         )?;
     }
 
-    let workflow = workflow.trim_end().to_string();
-
     Ok(workflow)
 }
 
@@ -223,8 +221,6 @@ jobs:
             platform = "windows-latest"
         )?;
     }
-
-    let workflow = workflow.trim_end().to_string();
 
     Ok(workflow)
 }
@@ -377,8 +373,6 @@ jobs:
         include_str!("../templates/ci/release_end"),
         files = files
     )?;
-
-    let workflow = workflow.trim_end().to_string();
 
     Ok(workflow)
 }
