@@ -2,5 +2,4 @@
         with:
           name: {build_name}
           path: {build_path}
-      - run: mv {build_path}/{project_name} {build_path}/{project_name}-${{{{
-        steps.get_version.outputs.VERSION }}}}-{platform}
+      - run: mv {build_path}/{project_name} {build_path}/{project_name}-${{{{ steps.get_version.outputs.VERSION }}}}-{platform}
