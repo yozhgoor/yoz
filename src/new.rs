@@ -137,38 +137,30 @@ jobs:
 
     let mut workflow = String::new();
 
+    write!(workflow, "{}", header,)?;
+
     write!(
         workflow,
-        "{}{}",
-        header,
-        format!(
-            include_str!("../templates/ci/test"),
-            job_name = "test",
-            platform = "ubuntu-latest"
-        )
+        include_str!("../templates/ci/test"),
+        job_name = "test",
+        platform = "ubuntu-latest"
     )?;
 
     if !no_windows {
         write!(
             workflow,
-            "{}",
-            format!(
-                include_str!("../templates/ci/test"),
-                job_name = "test-windows",
-                platform = "windows-latest"
-            )
+            include_str!("../templates/ci/test"),
+            job_name = "test-windows",
+            platform = "windows-latest"
         )?;
     }
 
     if !no_osx {
         write!(
             workflow,
-            "{}",
-            format!(
-                include_str!("../templates/ci/test"),
-                job_name = "test-osx",
-                platform = "windows-latest"
-            )
+            include_str!("../templates/ci/test"),
+            job_name = "test-osx",
+            platform = "windows-latest"
         )?;
     }
 
@@ -190,11 +182,7 @@ jobs:
 
     let mut workflow = String::new();
 
-    write!(
-        workflow,
-        "{}",
-        header,
-    )?;
+    write!(workflow, "{}", header,)?;
     write!(
         workflow,
         include_str!("../templates/ci/test_and_lint"),
@@ -205,9 +193,9 @@ jobs:
     if !no_windows {
         write!(
             workflow,
-                include_str!("../templates/ci/test"),
-                job_name = "test-windows",
-                platform = "windows-latest"
+            include_str!("../templates/ci/test"),
+            job_name = "test-windows",
+            platform = "windows-latest"
         )?;
     }
 
@@ -223,12 +211,16 @@ jobs:
     Ok(workflow)
 }
 
-fn generate_release_workflow(project_name: &str, no_windows: bool, no_osx: bool) -> anyhow::Result<String> {
-   let build_linux_name = "build-linux";
-   let build_windows_name = "build-windows";
-   let build_osx_name = "build-osx";
+fn generate_release_workflow(
+    project_name: &str,
+    no_windows: bool,
+    no_osx: bool,
+) -> anyhow::Result<String> {
+    let build_linux_name = "build-linux";
+    let build_windows_name = "build-windows";
+    let build_osx_name = "build-osx";
 
-   let header = "name: Release
+    let header = "name: Release
 
 on:
   push:
@@ -240,11 +232,7 @@ jobs:
 
     let mut workflow = String::new();
 
-    write!(
-        workflow,
-        "{}",
-        header,
-    )?;
+    write!(workflow, "{}", header,)?;
     write!(
         workflow,
         include_str!("../templates/ci/release_build_with_strip"),
@@ -289,7 +277,10 @@ jobs:
     } else if no_windows && !no_osx {
         format!("[{}, {}]", build_linux_name, build_osx_name)
     } else {
-        format!("[{}, {}, {}]", build_linux_name, build_windows_name, build_osx_name)
+        format!(
+            "[{}, {}, {}]",
+            build_linux_name, build_windows_name, build_osx_name
+        )
     };
 
     write!(
@@ -330,25 +321,37 @@ jobs:
     }
 
     let files = if no_windows && no_osx {
-        format!("|
+        format!(
+            "|
             {}/*
-", build_linux_name)
+",
+            build_linux_name
+        )
     } else if !no_windows && no_osx {
-        format!("|
+        format!(
+            "|
             {}/*
             {}/*
-", build_linux_name, build_windows_name)
+",
+            build_linux_name, build_windows_name
+        )
     } else if no_windows && !no_osx {
-        format!("|
+        format!(
+            "|
             {}/*
             {}/*
-", build_linux_name, build_osx_name)
+",
+            build_linux_name, build_osx_name
+        )
     } else {
-        format!("|
+        format!(
+            "|
             {}/*
             {}/*
             {}/*
-", build_linux_name, build_windows_name, build_osx_name)
+",
+            build_linux_name, build_windows_name, build_osx_name
+        )
     };
 
     write!(
