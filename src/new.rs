@@ -178,6 +178,13 @@ jobs:
         )?;
     }
 
+    let mut workflow = workflow.trim().to_string();
+
+    write!(
+        workflow,
+        "\n"
+    )?;
+
     Ok(workflow)
 }
 
@@ -221,6 +228,13 @@ jobs:
             platform = "windows-latest"
         )?;
     }
+
+    let mut workflow = workflow.trim().to_string();
+
+    write!(
+        workflow,
+        "\n"
+    )?;
 
     Ok(workflow)
 }
@@ -372,6 +386,13 @@ jobs:
         workflow,
         include_str!("../templates/ci/release_end"),
         files = files
+    )?;
+
+    let mut workflow = workflow.trim().to_string();
+
+    write!(
+        workflow,
+        "\n"
     )?;
 
     Ok(workflow)
