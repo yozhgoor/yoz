@@ -4,7 +4,7 @@ pub struct New {
     /// Name of the Rust project.
     name: String,
     #[clap(short = 'p', long)]
-    /// Path where the project will be created (the name will be appended).
+    /// Path where the project will be created.
     path: Option<std::path::PathBuf>,
     /// Full name used in the licenses.
     #[clap(long)]
@@ -36,6 +36,47 @@ impl New {
         let project_dir_path = working_dir.join(&self.name);
         std::fs::create_dir(&project_dir_path)?;
 
+        if self.lib && self.xtask {
+            log::info!("Generating project's library package");
+            let mut command = std::process::Command::new("cargo");
+            command
+                .current_dir(&project_dir_path)
+                .args(["new", &self.name, "--lib"]);
+
+            anyhow::ensure!(
+                command.status()?.success(),
+                "cannot create project's library package"
+            );
+        } else if !self.lib && self.xtask {
+            log::info!("Generating project's binary package");
+            let mut command = std::process::Command::new("cargo");
+            command
+                .current_dir(&project_dir_path)
+                .args(["new", &self.name]);
+
+            anyhow::ensure!(
+                command.status()?.success(),
+                "cannot create project's binary package"
+            );
+        } else if self.lib && !self.xtask {
+            log::info!("Initializing as a library");
+            let mut command = std::process::Command::new("cargo");
+            command
+                .current_dir(&project_dir_path)
+                .args(["init", "--lib"]);
+
+            anyhow::ensure!(
+                command.status()?.success(),
+                "cannot initialize as a library"
+            );
+        } else {
+            log::info!("Initializing as a binary");
+            let mut command = std::process::Command::new("cargo");
+            command.current_dir(&project_dir_path).arg("init");
+
+            anyhow::ensure!(command.status()?.success(), "cannot initialize as a binary");
+        }
+
         if !self.no_license {
             log::info!("Generating licenses");
             add_licenses(&project_dir_path, self.full_name)?;
@@ -45,44 +86,43 @@ impl New {
             let workflows_dir = project_dir_path.join(".github").join("workflows");
             std::fs::create_dir_all(&workflows_dir)?;
 
+            log::info!("Generating CI");
             if self.lib {
-                log::info!("Generating lib's CI");
                 add_lib_ci(&workflows_dir, self.no_windows, self.no_osx)?;
             } else {
-                log::info!("Generating bin's CI");
                 add_bin_ci(&workflows_dir, &self.name, self.no_windows, self.no_osx)?;
             }
         }
 
         if self.xtask {
+            log::info!("Generating xtask package");
+            let mut command = std::process::Command::new("cargo");
+            command
+                .current_dir(&project_dir_path)
+                .args(["new", "xtask"]);
+
+            anyhow::ensure!(
+                command.status()?.success(),
+                "cannot create project's xtask package"
+            );
+
             log::info!("Generating cargo's config directory");
             let cargo_dir = &project_dir_path.join(".cargo");
-            let cargo_config = "[alias]\nxtask = \"run --package xtask --\"";
-
             std::fs::create_dir(cargo_dir)?;
+
             std::fs::write(
                 cargo_dir.join("config"),
-                cargo_config,
+                "[alias]\nxtask = \"run --package xtask --\"",
             )?;
-        }
 
-        if self.lib && self.xtask {
-            std::fs::create_dir(&project_dir_path.join(".cargo"))?;
-
-            let mut lib_command = std::process::Command::new("cargo");
-            lib_command.current_dir(&project_dir_path).args(["new", &self.name, "--lib"]);
-
-            let mut xtask_command = std::process::Command::new("cargo");
-            xtask_command.current_dir(&project_dir_path).args(["new", "xtask"]);
-
-            anyhow::ensure!(lib_command.status()?.success(), "cannot create project's lib");
-            anyhow::ensure!(xtask_command.status()?.success(), "cannot create project's xtask");
-        } else if !self.lib && self.xtask {
-            todo!("xtask bin");
-        } else if self.lib && !self.xtask {
-            todo!("lib");
-        } else {
-            todo!("bin");
+            log::info!("Generating workspace's Cargo.toml");
+            std::fs::write(
+                &project_dir_path.join("Cargo.toml"),
+                format!(
+                    include_str!("../templates/xtask_workspace_toml"),
+                    project_name = &self.name
+                ),
+            )?;
         }
 
         Ok(())
@@ -90,6 +130,7 @@ impl New {
 }
 
 use chrono::Datelike;
+use std::fmt::Write;
 
 fn add_licenses(
     project_dir_path: &std::path::Path,
@@ -148,8 +189,6 @@ fn add_bin_ci(
 
     Ok(())
 }
-
-use std::fmt::Write;
 
 fn generate_main_workflow(no_windows: bool, no_osx: bool) -> anyhow::Result<String> {
     let header = "name: main
