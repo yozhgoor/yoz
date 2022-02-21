@@ -1,9 +1,14 @@
+use crate::set_working_dir;
+use anyhow::Result;
+use std::{path, process};
+
+/// Run multiples checks on your Project and output if your code is ok or not.
 #[derive(clap::Parser)]
 pub struct Checks {
     /// Path of the project that will be checked.
     ///
     /// This path must point to a Rust project.
-    path: Option<std::path::PathBuf>,
+    path: Option<path::PathBuf>,
     /// Arguments given to the `cargo check` command.
     ///
     /// The default is `cargo check --workspace --all-features`.
@@ -30,11 +35,11 @@ pub struct Checks {
 }
 
 impl Checks {
-    pub fn run(self) -> anyhow::Result<()> {
-        let working_dir = crate::set_working_dir(self.path)?;
+    pub fn run(self) -> Result<()> {
+        let working_dir = set_working_dir(self.path)?;
 
         if self.clean {
-            if std::process::Command::new("cargo")
+            if process::Command::new("cargo")
                 .current_dir(&working_dir)
                 .arg("clean")
                 .status()
@@ -48,12 +53,12 @@ impl Checks {
         }
 
         let mut check = if !self.check.is_empty() {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command.current_dir(&working_dir).args(self.check);
 
             command
         } else {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command
                 .current_dir(&working_dir)
                 .args(["check", "--workspace", "--all-features"]);
@@ -62,12 +67,12 @@ impl Checks {
         };
 
         let mut test = if !self.test.is_empty() {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command.current_dir(&working_dir).args(self.test);
 
             command
         } else {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command
                 .current_dir(&working_dir)
                 .args(["test", "--workspace", "--all-features"]);
@@ -76,12 +81,12 @@ impl Checks {
         };
 
         let mut fmt = if !self.fmt.is_empty() {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command.current_dir(&working_dir).args(self.fmt);
 
             command
         } else {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command
                 .current_dir(&working_dir)
                 .args(["fmt", "--all", "--check"]);
@@ -90,12 +95,12 @@ impl Checks {
         };
 
         let mut clippy = if !self.clippy.is_empty() {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command.current_dir(&working_dir).args(self.clippy);
 
             command
         } else {
-            let mut command = std::process::Command::new("cargo");
+            let mut command = process::Command::new("cargo");
             command
                 .current_dir(&working_dir)
                 .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);

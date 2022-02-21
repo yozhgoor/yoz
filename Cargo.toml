@@ -13,6 +13,7 @@ include = ["src/**/*.rs", "README.md", "LICENSE.Apache-2.0", "LICENSE.MIT"]
 
 [dependencies]
 anyhow = "1.0"
+cargo_metadata = "0.14"
 chrono = "0.4"
 clap = { version = "3.0", features = ["derive"] }
 env_logger = "0.9"
