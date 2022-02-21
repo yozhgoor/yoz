@@ -1,37 +1,45 @@
-use std::fmt::Write;
+use anyhow::Result;
+use std::{fmt::Write, fs, path};
 
-pub fn add_lib_ci(
-    workflows_dir: &std::path::Path,
-    no_windows: bool,
-    no_osx: bool,
-) -> anyhow::Result<()> {
+pub fn add_lib_ci(project_dir: &path::Path, no_windows: bool, no_osx: bool) -> Result<()> {
+    let workflows_dir = create_workflows_dir(project_dir)?;
+
     let main_workflow = generate_main_workflow(no_windows, no_osx)?;
     let pr_workflow = generate_pr_workflow(no_windows, no_osx)?;
 
-    std::fs::write(workflows_dir.join("main.yml"), main_workflow)?;
-    std::fs::write(workflows_dir.join("pr.yml"), pr_workflow)?;
+    fs::write(workflows_dir.join("main.yml"), main_workflow)?;
+    fs::write(workflows_dir.join("pr.yml"), pr_workflow)?;
 
     Ok(())
 }
 
 pub fn add_bin_ci(
-    workflows_dir: &std::path::Path,
+    project_dir_path: &path::Path,
     project_name: &str,
     no_windows: bool,
     no_osx: bool,
-) -> anyhow::Result<()> {
+) -> Result<()> {
+    let workflows_dir = create_workflows_dir(project_dir_path)?;
+
     let main_workflow = generate_main_workflow(no_windows, no_osx)?;
     let pr_workflow = generate_pr_workflow(no_windows, no_osx)?;
     let release_workflow = generate_release_workflow(project_name, no_windows, no_osx)?;
 
-    std::fs::write(workflows_dir.join("main.yml"), main_workflow)?;
-    std::fs::write(workflows_dir.join("pr.yml"), pr_workflow)?;
-    std::fs::write(workflows_dir.join("release.yml"), release_workflow)?;
+    fs::write(workflows_dir.join("main.yml"), main_workflow)?;
+    fs::write(workflows_dir.join("pr.yml"), pr_workflow)?;
+    fs::write(workflows_dir.join("release.yml"), release_workflow)?;
 
     Ok(())
 }
 
-fn generate_main_workflow(no_windows: bool, no_osx: bool) -> anyhow::Result<String> {
+fn create_workflows_dir(path: &path::Path) -> Result<path::PathBuf> {
+    let workflows_dir = path.join(".github").join("workflows");
+    fs::create_dir_all(&workflows_dir)?;
+
+    Ok(workflows_dir)
+}
+
+fn generate_main_workflow(no_windows: bool, no_osx: bool) -> Result<String> {
     let header = "name: main
 
 on:
@@ -82,7 +90,7 @@ jobs:
     Ok(workflow)
 }
 
-fn generate_pr_workflow(no_windows: bool, no_osx: bool) -> anyhow::Result<String> {
+fn generate_pr_workflow(no_windows: bool, no_osx: bool) -> Result<String> {
     let header = "name: PR
 
 on:

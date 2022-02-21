@@ -87,14 +87,11 @@ impl New {
         }
 
         if !self.no_ci {
-            let workflows_dir = project_dir_path.join(".github").join("workflows");
-            fs::create_dir_all(&workflows_dir)?;
-
-            log::info!("Generating CI");
+            log::info!("Generating CI files");
             if self.lib {
-                workflow::add_lib_ci(&workflows_dir, self.no_windows, self.no_osx)?;
+                workflow::add_lib_ci(&project_dir_path, self.no_windows, self.no_osx)?;
             } else {
-                workflow::add_bin_ci(&workflows_dir, &self.name, self.no_windows, self.no_osx)?;
+                workflow::add_bin_ci(&project_dir_path, &self.name, self.no_windows, self.no_osx)?;
             }
         }
 
