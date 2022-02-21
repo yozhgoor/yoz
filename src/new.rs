@@ -54,12 +54,29 @@ impl New {
             }
         }
 
+        if self.xtask {
+            log::info!("Generating cargo's config directory");
+            let cargo_dir = &project_dir_path.join(".cargo");
+            let cargo_config = "[alias]\nxtask = \"run --package xtask --\"";
+
+            std::fs::create_dir(cargo_dir)?;
+            std::fs::write(
+                cargo_dir.join("config"),
+                cargo_config,
+            )?;
+        }
+
         if self.lib && self.xtask {
+            std::fs::create_dir(&project_dir_path.join(".cargo"))?;
+
             let mut lib_command = std::process::Command::new("cargo");
-            lib_command.args(["new", &self.name, "--lib"]);
+            lib_command.current_dir(&project_dir_path).args(["new", &self.name, "--lib"]);
 
             let mut xtask_command = std::process::Command::new("cargo");
-            xtask_command.args(["new", "xtask"]);
+            xtask_command.current_dir(&project_dir_path).args(["new", "xtask"]);
+
+            anyhow::ensure!(lib_command.status()?.success(), "cannot create project's lib");
+            anyhow::ensure!(xtask_command.status()?.success(), "cannot create project's xtask");
         } else if !self.lib && self.xtask {
             todo!("xtask bin");
         } else if self.lib && !self.xtask {
