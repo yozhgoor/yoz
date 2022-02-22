@@ -1,10 +1,8 @@
 use crate::set_working_dir;
 use anyhow::Result;
-use std::{path, process};
 use colored::*;
+use std::{path, process::Command};
 use indicatif::ProgressBar;
-
-use std::fmt::Write;
 
 /// Run multiples checks on your Project and output if your code is ok or not.
 #[derive(clap::Parser)]
@@ -16,23 +14,23 @@ pub struct Checks {
     /// Arguments given to the `cargo check` command.
     ///
     /// The default is `cargo check --workspace --all-features`.
-    #[clap(long)]
-    check: Vec<String>,
+    #[clap(long = "check")]
+    check_args: Vec<String>,
     /// Arguments given to the `cargo fmt` command.
     ///
     /// The default is `cargo fmt --all --check`.
-    #[clap(long)]
-    fmt: Vec<String>,
+    #[clap(long = "fmt")]
+    fmt_args: Vec<String>,
     /// Arguments given to the `cargo test` command.
     ///
     /// The default is `cargo test --workspace --all-features`.
-    #[clap(long)]
-    test: Vec<String>,
+    #[clap(long = "test")]
+    test_args: Vec<String>,
     /// Arguments given to the `cargo clippy` command.
     ///
     /// The default is `cargo clippy --all --tests -- -D warnings`.
-    #[clap(long)]
-    clippy: Vec<String>,
+    #[clap(long = "clippy")]
+    clippy_args: Vec<String>,
     /// Remove the target directory.
     #[clap(long)]
     clean: bool,
@@ -40,116 +38,212 @@ pub struct Checks {
 
 impl Checks {
     pub fn run(self) -> Result<()> {
+        let checks = self.execute()?;
+
+        checks.print()?;
+
+        Ok(())
+    }
+
+    fn execute(self) -> Result<ExecutedChecks> {
         let working_dir = set_working_dir(self.path)?;
 
+        let bar = ProgressBar::new(5);
+
         if self.clean {
-            if process::Command::new("cargo")
+            if Command::new("cargo")
                 .current_dir(&working_dir)
-                .arg("clean")
-                .status()
-                .expect("cannot launch `cargo clean`")
-                .success()
+                    .arg("clean")
+                    .status()
+                    .expect("cannot launch `cargo clean`")
+                    .success()
             {
                 log::info!("Cleaned");
             } else {
-                log::error!("command `cargo clean` failed");
+                log::error!("cannot clean the project");
             }
         }
 
-        println!();
+        bar.inc(1);
 
-        let mut check = if !self.check.is_empty() {
-            let mut command = process::Command::new("cargo");
-            command.current_dir(&working_dir).args(self.check);
+        let check = {
+            let mut command_string = String::from("cargo check");
 
-            command
-        } else {
-            let mut command = process::Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["check", "--workspace", "--all-features"]);
+            let mut command = Command::new("cargo");
+            command.current_dir(&working_dir).arg("check");
 
-            command
+            if self.check_args.is_empty() {
+                command.args(["--workspace", "--all-features"]);
+
+                command_string.push_str(" --workspace --all-features");
+            } else {
+                command.args(&self.check_args);
+
+                for arg in self.check_args {
+                    command_string.push_str(format!(" {}", arg).as_str());
+                }
+
+
+            }
+
+            let is_success = command.output()?.status.success();
+            bar.inc(1);
+
+            ExecutedCheck {
+                command_string,
+                is_success
+            }
         };
 
-        let mut test = if !self.test.is_empty() {
-            let mut command = process::Command::new("cargo");
-            command.current_dir(&working_dir).args(self.test);
+        let test = {
+            let mut command_string = String::from("cargo test");
 
-            command
-        } else {
-            let mut command = process::Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["test", "--workspace", "--all-features"]);
+            let mut command = Command::new("cargo");
+            command.current_dir(&working_dir).arg("test");
 
-            command
+
+            if self.test_args.is_empty() {
+                command.args(["--workspace", "all-features"]);
+
+                command_string.push_str(" --workspace --all-features");
+            } else {
+                command.args(&self.test_args);
+
+                for arg in self.test_args {
+                    command_string.push_str(format!(" {}", arg).as_str());
+                }
+            }
+
+            let is_success = command.output()?.status.success();
+            bar.inc(1);
+
+            ExecutedCheck {
+                command_string,
+                is_success
+            }
         };
 
-        let mut fmt = if !self.fmt.is_empty() {
-            let mut command = process::Command::new("cargo");
-            command.current_dir(&working_dir).args(self.fmt);
+        let fmt = {
+            let mut command_string = String::from("cargo fmt");
 
-            command
-        } else {
-            let mut command = process::Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["fmt", "--all", "--check"]);
+            let mut command = Command::new("cargo");
+            command.current_dir(&working_dir).arg("fmt");
 
-            command
+            if self.fmt_args.is_empty() {
+                command.args(["--all", "--check"]);
+
+                command_string.push_str(" --all --check")
+            } else {
+                command.args(&self.fmt_args);
+
+                for arg in self.fmt_args {
+                    command_string.push_str(format!(" {}", arg).as_str());
+                }
+            }
+
+            let is_success = command.output()?.status.success();
+            bar.inc(1);
+
+            ExecutedCheck {
+                command_string,
+                is_success
+            }
         };
 
-        let mut clippy = if !self.clippy.is_empty() {
-            let mut command = process::Command::new("cargo");
-            command.current_dir(&working_dir).args(self.clippy);
+        let clippy = {
+            let mut command_string = String::from("cargo clippy");
 
-            command
-        } else {
+            let  mut command = Command::new("cargo");
+            command.current_dir(&working_dir).arg("clippy");
 
-                let mut command = process::Command::new("cargo");
-                command
-                    .current_dir(&working_dir)
-                    .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
+            if self.clippy_args.is_empty() {
+                command.args(["--all", "--tests", "--", "-D", "warnings"]);
 
-                command
-        };
+                command_string.push_str(" --all --tests -- -D warnings");
+            } else {
+                command.args(&self.clippy_args);
 
-        let mut output = String::new();
+                for arg in self.clippy_args {
+                    command_string.push_str(format!(" {}", arg).as_str());
+                }
+            }
 
-        let bar = ProgressBar::new_spinner();
+            let is_success = command.output()?.status.success();
+            bar.inc(1);
 
-        let ok = "Ok".green();
-        let nope = "Nope".red();
-
-        if check.output()?.status.success() {
-            writeln!(output, "cargo check : {}", ok)?;
-        } else {
-            writeln!(output, "cargo check : {}", nope)?;
-        };
-
-        if test.output()?.status.success() {
-            writeln!(output, "cargo test  : {}", ok)?;
-        } else {
-            writeln!(output, "cargo test  : {}", nope)?;
-        };
-
-        if fmt.output()?.status.success() {
-            writeln!(output, "cargo fmt   : {}", ok)?;
-        } else {
-            writeln!(output, "cargo fmt   : {}", nope)?;
-        };
-
-        if clippy.output()?.status.success() {
-            writeln!(output, "cargo clippy: {}", ok)?;
-        } else {
-            writeln!(output, "cargo clippy: {}", nope)?;
+            ExecutedCheck {
+                command_string,
+                is_success,
+            }
         };
 
         bar.finish_and_clear();
 
-        println!("{}", output);
+        Ok(ExecutedChecks {
+            check,
+            test,
+            fmt,
+            clippy,
+        })
+    }
+}
+
+struct ExecutedChecks {
+    check: ExecutedCheck,
+    test: ExecutedCheck,
+    fmt: ExecutedCheck,
+    clippy: ExecutedCheck,
+}
+
+impl ExecutedChecks {
+    pub fn print(self) -> Result<()> {
+        let ok = "Ok".green();
+        let nope = "Nope".red();
+
+        let mut failed_command = Vec::new();
+
+        println!();
+
+        if self.check.is_success {
+            println!("cargo check: {}", ok);
+        } else {
+            println!("cargo check: {}", nope);
+            failed_command.push(self.check.command_string);
+        }
+
+        if self.test.is_success {
+            println!("cargo test: {}", ok);
+        } else {
+            println!("cargo test: {}", nope);
+            failed_command.push(self.test.command_string);
+        }
+
+        if self.fmt.is_success {
+            println!("cargo fmt: {}", ok);
+        } else {
+            println!("cargo fmt: {}", nope);
+            failed_command.push(self.fmt.command_string);
+        }
+
+        if self.clippy.is_success {
+            println!("cargo clippy: {}", ok);
+        } else {
+            println!("cargo clippy: {}", nope);
+            failed_command.push(self.clippy.command_string);
+        }
+
+        println!();
+        println!("Failed command");
+
+        for s in failed_command {
+            println!("  {}", s);
+        }
 
         Ok(())
     }
+}
+
+struct ExecutedCheck {
+    command_string: String,
+    is_success: bool,
 }
