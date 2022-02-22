@@ -1,6 +1,10 @@
 use crate::set_working_dir;
 use anyhow::Result;
 use std::{path, process};
+use colored::*;
+use indicatif::ProgressBar;
+
+use std::fmt::Write;
 
 /// Run multiples checks on your Project and output if your code is ok or not.
 #[derive(clap::Parser)]
@@ -52,6 +56,8 @@ impl Checks {
             }
         }
 
+        println!();
+
         let mut check = if !self.check.is_empty() {
             let mut command = process::Command::new("cargo");
             command.current_dir(&working_dir).args(self.check);
@@ -100,37 +106,49 @@ impl Checks {
 
             command
         } else {
-            let mut command = process::Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
 
-            command
+                let mut command = process::Command::new("cargo");
+                command
+                    .current_dir(&working_dir)
+                    .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
+
+                command
         };
 
+        let mut output = String::new();
+
+        let bar = ProgressBar::new_spinner();
+
+        let ok = "Ok".green();
+        let nope = "Nope".red();
+
         if check.output()?.status.success() {
-            log::info!("cargo check : Ok");
+            writeln!(output, "cargo check : {}", ok)?;
         } else {
-            log::error!("cargo check : Nope");
+            writeln!(output, "cargo check : {}", nope)?;
         };
 
         if test.output()?.status.success() {
-            log::info!("cargo test  : Ok");
+            writeln!(output, "cargo test  : {}", ok)?;
         } else {
-            log::error!("cargo test  : Nope");
+            writeln!(output, "cargo test  : {}", nope)?;
         };
 
         if fmt.output()?.status.success() {
-            log::info!("cargo fmt   : Ok");
+            writeln!(output, "cargo fmt   : {}", ok)?;
         } else {
-            log::error!("cargo fmt   : Nope");
+            writeln!(output, "cargo fmt   : {}", nope)?;
         };
 
         if clippy.output()?.status.success() {
-            log::info!("cargo clippy: Ok");
+            writeln!(output, "cargo clippy: {}", ok)?;
         } else {
-            log::error!("cargo clippy: Nope");
+            writeln!(output, "cargo clippy: {}", nope)?;
         };
+
+        bar.finish_and_clear();
+
+        println!("{}", output);
 
         Ok(())
     }
