@@ -2,7 +2,7 @@ use crate::set_working_dir;
 use anyhow::Result;
 use colored::*;
 use std::{path, process::Command};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 /// Run multiples checks on your Project and output if your code is ok or not.
 #[derive(clap::Parser)]
@@ -49,24 +49,28 @@ impl Checks {
         let working_dir = set_working_dir(self.path)?;
 
         let bar = ProgressBar::new(5);
+        bar.set_style(ProgressStyle::default_bar().template("{bar:25.green} {msg}").progress_chars("#>-"));
+        let start = std::time::Instant::now();
 
         if self.clean {
-            if Command::new("cargo")
+            bar.set_message("Cleaning...");
+            if !Command::new("cargo")
                 .current_dir(&working_dir)
                     .arg("clean")
                     .status()
                     .expect("cannot launch `cargo clean`")
                     .success()
             {
-                log::info!("Cleaned");
-            } else {
                 log::error!("cannot clean the project");
             }
         }
 
+        bar.set_message("Building...");
         bar.inc(1);
 
         let check = {
+            bar.set_message("Checking package...");
+
             let mut command_string = String::from("cargo check");
 
             let mut command = Command::new("cargo");
@@ -87,6 +91,7 @@ impl Checks {
             }
 
             let is_success = command.output()?.status.success();
+
             bar.inc(1);
 
             ExecutedCheck {
@@ -96,6 +101,7 @@ impl Checks {
         };
 
         let test = {
+            bar.set_message("Checking tests...");
             let mut command_string = String::from("cargo test");
 
             let mut command = Command::new("cargo");
@@ -124,6 +130,8 @@ impl Checks {
         };
 
         let fmt = {
+            bar.set_message("Checking formatting...");
+
             let mut command_string = String::from("cargo fmt");
 
             let mut command = Command::new("cargo");
@@ -151,6 +159,8 @@ impl Checks {
         };
 
         let clippy = {
+            bar.set_message("Checking lints...");
+
             let mut command_string = String::from("cargo clippy");
 
             let  mut command = Command::new("cargo");
@@ -169,6 +179,7 @@ impl Checks {
             }
 
             let is_success = command.output()?.status.success();
+
             bar.inc(1);
 
             ExecutedCheck {
@@ -177,7 +188,7 @@ impl Checks {
             }
         };
 
-        bar.finish_and_clear();
+        bar.finish_with_message(format!("Done (in {}s)", start.elapsed().as_secs()));
 
         Ok(ExecutedChecks {
             check,
