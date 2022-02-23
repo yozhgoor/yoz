@@ -1,8 +1,8 @@
 use crate::set_working_dir;
 use anyhow::Result;
 use colored::*;
-use std::{path, process::Command};
 use indicatif::{ProgressBar, ProgressStyle};
+use std::{path, process::Command};
 
 /// Run multiples checks on your Project and output if your code is ok or not.
 #[derive(clap::Parser)]
@@ -49,17 +49,21 @@ impl Checks {
         let working_dir = set_working_dir(self.path)?;
 
         let bar = ProgressBar::new(5);
-        bar.set_style(ProgressStyle::default_bar().template("{bar:25.green} {msg}").progress_chars("#>-"));
+        bar.set_style(
+            ProgressStyle::default_bar()
+                .template("{bar:25.green} {msg}")
+                .progress_chars("#>-"),
+        );
         let start = std::time::Instant::now();
 
         if self.clean {
             bar.set_message("Cleaning...");
             if !Command::new("cargo")
                 .current_dir(&working_dir)
-                    .arg("clean")
-                    .status()
-                    .expect("cannot launch `cargo clean`")
-                    .success()
+                .arg("clean")
+                .status()
+                .expect("cannot launch `cargo clean`")
+                .success()
             {
                 log::error!("cannot clean the project");
             }
@@ -86,8 +90,6 @@ impl Checks {
                 for arg in self.check_args {
                     command_string.push_str(format!(" {}", arg).as_str());
                 }
-
-
             }
 
             let is_success = command.output()?.status.success();
@@ -96,7 +98,7 @@ impl Checks {
 
             ExecutedCheck {
                 command_string,
-                is_success
+                is_success,
             }
         };
 
@@ -106,7 +108,6 @@ impl Checks {
 
             let mut command = Command::new("cargo");
             command.current_dir(&working_dir).arg("test");
-
 
             if self.test_args.is_empty() {
                 command.args(["--workspace", "all-features"]);
@@ -125,7 +126,7 @@ impl Checks {
 
             ExecutedCheck {
                 command_string,
-                is_success
+                is_success,
             }
         };
 
@@ -154,7 +155,7 @@ impl Checks {
 
             ExecutedCheck {
                 command_string,
-                is_success
+                is_success,
             }
         };
 
@@ -163,7 +164,7 @@ impl Checks {
 
             let mut command_string = String::from("cargo clippy");
 
-            let  mut command = Command::new("cargo");
+            let mut command = Command::new("cargo");
             command.current_dir(&working_dir).arg("clippy");
 
             if self.clippy_args.is_empty() {
@@ -244,10 +245,15 @@ impl ExecutedChecks {
         }
 
         println!();
-        println!("Failed command");
 
-        for s in failed_command {
-            println!("  {}", s);
+        if !failed_command.is_empty() {
+            println!("Failed command:");
+
+            for s in failed_command {
+                println!("  {}", s);
+            }
+
+            println!();
         }
 
         Ok(())
