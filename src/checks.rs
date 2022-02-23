@@ -11,26 +11,6 @@ pub struct Checks {
     ///
     /// This path must point to a Rust project.
     path: Option<path::PathBuf>,
-    /// Arguments given to the `cargo check` command.
-    ///
-    /// The default is `cargo check --workspace --all-features`.
-    #[clap(long = "check")]
-    check_args: Vec<String>,
-    /// Arguments given to the `cargo fmt` command.
-    ///
-    /// The default is `cargo fmt --all --check`.
-    #[clap(long = "fmt")]
-    fmt_args: Vec<String>,
-    /// Arguments given to the `cargo test` command.
-    ///
-    /// The default is `cargo test --workspace --all-features`.
-    #[clap(long = "test")]
-    test_args: Vec<String>,
-    /// Arguments given to the `cargo clippy` command.
-    ///
-    /// The default is `cargo clippy --all --tests -- -D warnings`.
-    #[clap(long = "clippy")]
-    clippy_args: Vec<String>,
     /// Remove the target directory.
     #[clap(long)]
     clean: bool,
@@ -38,14 +18,6 @@ pub struct Checks {
 
 impl Checks {
     pub fn run(self) -> Result<()> {
-        let checks = self.execute()?;
-
-        checks.print()?;
-
-        Ok(())
-    }
-
-    fn execute(self) -> Result<ExecutedChecks> {
         let working_dir = set_working_dir(self.path)?;
 
         let bar = ProgressBar::new(5);
@@ -72,143 +44,77 @@ impl Checks {
         bar.set_message("Building...");
         bar.inc(1);
 
-        let check = {
-            bar.set_message("Checking package...");
-
-            let mut command_string = String::from("cargo check");
-
-            let mut command = Command::new("cargo");
-            command.current_dir(&working_dir).arg("check");
-
-            if self.check_args.is_empty() {
-                command.args(["--workspace", "--all-features"]);
-
-                command_string.push_str(" --workspace --all-features");
-            } else {
-                command.args(&self.check_args);
-
-                for arg in self.check_args {
-                    command_string.push_str(format!(" {}", arg).as_str());
-                }
-            }
-
-            let is_success = command.output()?.status.success();
-
-            bar.inc(1);
-
-            ExecutedCheck {
-                command_string,
-                is_success,
-            }
-        };
-
-        let test = {
-            bar.set_message("Checking tests...");
-            let mut command_string = String::from("cargo test");
-
-            let mut command = Command::new("cargo");
-            command.current_dir(&working_dir).arg("test");
-
-            if self.test_args.is_empty() {
-                command.args(["--workspace", "all-features"]);
-
-                command_string.push_str(" --workspace --all-features");
-            } else {
-                command.args(&self.test_args);
-
-                for arg in self.test_args {
-                    command_string.push_str(format!(" {}", arg).as_str());
-                }
-            }
-
-            let is_success = command.output()?.status.success();
-            bar.inc(1);
-
-            ExecutedCheck {
-                command_string,
-                is_success,
-            }
-        };
-
-        let fmt = {
+        let (fmt_command, fmt_is_success) = {
             bar.set_message("Checking formatting...");
 
-            let mut command_string = String::from("cargo fmt");
-
             let mut command = Command::new("cargo");
-            command.current_dir(&working_dir).arg("fmt");
-
-            if self.fmt_args.is_empty() {
-                command.args(["--all", "--check"]);
-
-                command_string.push_str(" --all --check")
-            } else {
-                command.args(&self.fmt_args);
-
-                for arg in self.fmt_args {
-                    command_string.push_str(format!(" {}", arg).as_str());
-                }
-            }
+            command
+                .current_dir(&working_dir)
+                .args(["fmt", "--all", "--check"]);
 
             let is_success = command.output()?.status.success();
+
             bar.inc(1);
 
-            ExecutedCheck {
-                command_string,
-                is_success,
-            }
+            (String::from("cargo fmt --all --check"), is_success)
         };
 
-        let clippy = {
-            bar.set_message("Checking lints...");
-
-            let mut command_string = String::from("cargo clippy");
+        let (check_command, check_is_success) = {
+            bar.set_message("Checking package...");
 
             let mut command = Command::new("cargo");
-            command.current_dir(&working_dir).arg("clippy");
-
-            if self.clippy_args.is_empty() {
-                command.args(["--all", "--tests", "--", "-D", "warnings"]);
-
-                command_string.push_str(" --all --tests -- -D warnings");
-            } else {
-                command.args(&self.clippy_args);
-
-                for arg in self.clippy_args {
-                    command_string.push_str(format!(" {}", arg).as_str());
-                }
-            }
+            command
+                .current_dir(&working_dir)
+                .args(["check", "--workspace", "--all-features"]);
 
             let is_success = command.output()?.status.success();
 
             bar.inc(1);
 
-            ExecutedCheck {
-                command_string,
+            (
+                String::from("cargo check --workspace --all-features"),
                 is_success,
-            }
+            )
+        };
+
+        let (test_command, test_is_success) = {
+            bar.set_message("Checking tests...");
+
+            let mut command = Command::new("cargo");
+            command
+                .current_dir(&working_dir)
+                .args(["test", "--workspace", "all-features"]);
+
+            let is_success = command.output()?.status.success();
+
+            bar.inc(1);
+
+            (
+                String::from("cargo test --workspace --all-features"),
+                is_success,
+            )
+        };
+
+        let (clippy_command, clippy_is_success) = {
+            bar.set_message("Checking lints...");
+
+            let mut command = Command::new("cargo");
+            command
+                .current_dir(&working_dir)
+                .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
+
+            let is_success = command.output()?.status.success();
+
+            bar.inc(1);
+
+            (
+                String::from("cargo clippy --all --tests -- -D warnings"),
+                is_success,
+            )
         };
 
         bar.finish_with_message(format!("Done (in {}s)", start.elapsed().as_secs()));
 
-        Ok(ExecutedChecks {
-            check,
-            test,
-            fmt,
-            clippy,
-        })
-    }
-}
-
-struct ExecutedChecks {
-    check: ExecutedCheck,
-    test: ExecutedCheck,
-    fmt: ExecutedCheck,
-    clippy: ExecutedCheck,
-}
-
-impl ExecutedChecks {
-    pub fn print(self) -> Result<()> {
         let ok = "Ok".green();
         let nope = "Nope".red();
 
@@ -216,32 +122,32 @@ impl ExecutedChecks {
 
         println!();
 
-        if self.check.is_success {
-            println!("cargo check: {}", ok);
-        } else {
-            println!("cargo check: {}", nope);
-            failed_command.push(self.check.command_string);
-        }
-
-        if self.test.is_success {
-            println!("cargo test: {}", ok);
-        } else {
-            println!("cargo test: {}", nope);
-            failed_command.push(self.test.command_string);
-        }
-
-        if self.fmt.is_success {
+        if fmt_is_success {
             println!("cargo fmt: {}", ok);
         } else {
             println!("cargo fmt: {}", nope);
-            failed_command.push(self.fmt.command_string);
+            failed_command.push(fmt_command);
         }
 
-        if self.clippy.is_success {
+        if check_is_success {
+            println!("cargo check: {}", ok);
+        } else {
+            println!("cargo check: {}", nope);
+            failed_command.push(check_command);
+        }
+
+        if test_is_success {
+            println!("cargo test: {}", ok);
+        } else {
+            println!("cargo test: {}", nope);
+            failed_command.push(test_command);
+        }
+
+        if clippy_is_success {
             println!("cargo clippy: {}", ok);
         } else {
             println!("cargo clippy: {}", nope);
-            failed_command.push(self.clippy.command_string);
+            failed_command.push(clippy_command);
         }
 
         println!();
@@ -258,9 +164,4 @@ impl ExecutedChecks {
 
         Ok(())
     }
-}
-
-struct ExecutedCheck {
-    command_string: String,
-    is_success: bool,
 }
