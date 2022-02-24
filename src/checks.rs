@@ -1,11 +1,10 @@
 use crate::set_working_dir;
 use anyhow::Result;
-use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{path, process::Command};
+use std::{path, process::Command, time};
 
 /// Run multiples checks on your Project and output if your code is ok or not.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct Checks {
     /// Path of the project that will be checked.
     ///
@@ -20,148 +19,168 @@ impl Checks {
     pub fn run(self) -> Result<()> {
         let working_dir = set_working_dir(self.path)?;
 
-        let bar = ProgressBar::new(5);
-        bar.set_style(
-            ProgressStyle::default_bar()
-                .template("{bar:25.green} {msg}")
-                .progress_chars("#>-"),
-        );
         let start = std::time::Instant::now();
 
         if self.clean {
-            bar.set_message("Cleaning...");
-            if !Command::new("cargo")
+            Command::new("cargo")
                 .current_dir(&working_dir)
                 .arg("clean")
-                .status()
-                .expect("cannot launch `cargo clean`")
-                .success()
-            {
-                log::error!("cannot clean the project");
-            }
+                .status()?;
         }
 
-        bar.set_message("Building...");
-        bar.inc(1);
+        let commands = vec![
+            ChecksCommand::check(&working_dir),
+            ChecksCommand::test(&working_dir),
+            ChecksCommand::fmt(&working_dir),
+            ChecksCommand::clippy(&working_dir),
+        ];
 
-        let (fmt_command, fmt_is_success) = {
-            bar.set_message("Checking formatting...");
+        let failed_commands = commands
+            .into_iter()
+            .filter_map(|x| x.execute(start).ok()?)
+            .collect::<Vec<String>>();
 
-            let mut command = Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["fmt", "--all", "--check"]);
-
-            let is_success = command.output()?.status.success();
-
-            bar.inc(1);
-
-            (String::from("cargo fmt --all --check"), is_success)
-        };
-
-        let (check_command, check_is_success) = {
-            bar.set_message("Checking package...");
-
-            let mut command = Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["check", "--workspace", "--all-features"]);
-
-            let is_success = command.output()?.status.success();
-
-            bar.inc(1);
-
-            (
-                String::from("cargo check --workspace --all-features"),
-                is_success,
-            )
-        };
-
-        let (test_command, test_is_success) = {
-            bar.set_message("Checking tests...");
-
-            let mut command = Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["test", "--workspace", "all-features"]);
-
-            let is_success = command.output()?.status.success();
-
-            bar.inc(1);
-
-            (
-                String::from("cargo test --workspace --all-features"),
-                is_success,
-            )
-        };
-
-        let (clippy_command, clippy_is_success) = {
-            bar.set_message("Checking lints...");
-
-            let mut command = Command::new("cargo");
-            command
-                .current_dir(&working_dir)
-                .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
-
-            let is_success = command.output()?.status.success();
-
-            bar.inc(1);
-
-            (
-                String::from("cargo clippy --all --tests -- -D warnings"),
-                is_success,
-            )
-        };
-
-        bar.finish_with_message(format!("Done (in {}s)", start.elapsed().as_secs()));
-
-        let ok = "Ok".green();
-        let nope = "Nope".red();
-
-        let mut failed_command = Vec::new();
-
-        println!();
-
-        if fmt_is_success {
-            println!("cargo fmt: {}", ok);
-        } else {
-            println!("cargo fmt: {}", nope);
-            failed_command.push(fmt_command);
-        }
-
-        if check_is_success {
-            println!("cargo check: {}", ok);
-        } else {
-            println!("cargo check: {}", nope);
-            failed_command.push(check_command);
-        }
-
-        if test_is_success {
-            println!("cargo test: {}", ok);
-        } else {
-            println!("cargo test: {}", nope);
-            failed_command.push(test_command);
-        }
-
-        if clippy_is_success {
-            println!("cargo clippy: {}", ok);
-        } else {
-            println!("cargo clippy: {}", nope);
-            failed_command.push(clippy_command);
-        }
-
-        println!();
-
-        if !failed_command.is_empty() {
-            println!("Failed command:");
-
-            for s in failed_command {
-                println!("  {}", s);
-            }
-
+        if !failed_commands.is_empty() {
             println!();
+            println!("Fails ({}):", failed_commands.len());
+            for command in failed_commands {
+                println!("{command}");
+            }
         }
 
         Ok(())
+    }
+}
+
+#[derive(Debug)]
+struct ChecksCommand {
+    kind: CheckKind,
+    command: Command,
+    command_string: String,
+}
+
+impl ChecksCommand {
+    fn check(working_dir: &path::Path) -> Self {
+        let mut command = Command::new("cargo");
+        command
+            .current_dir(working_dir)
+            .args(["check", "--workspace", "--all-features"]);
+
+        Self {
+            kind: CheckKind::Check,
+            command,
+            command_string: String::from("cargo check --workspace --all-features"),
+        }
+    }
+
+    fn test(working_dir: &path::Path) -> Self {
+        let mut command = Command::new("cargo");
+        command
+            .current_dir(working_dir)
+            .args(["test", "--workspace", "--all-features"]);
+
+        Self {
+            kind: CheckKind::Test,
+            command,
+            command_string: String::from("cargo test --workspace --all-features"),
+        }
+    }
+
+    fn fmt(working_dir: &path::Path) -> Self {
+        let mut command = Command::new("cargo");
+        command
+            .current_dir(working_dir)
+            .args(["fmt", "--all", "--check"]);
+
+        Self {
+            kind: CheckKind::Fmt,
+            command,
+            command_string: String::from("cargo fmt --all --check"),
+        }
+    }
+
+    fn clippy(working_dir: &path::Path) -> Self {
+        let mut command = Command::new("cargo");
+        command
+            .current_dir(working_dir)
+            .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
+
+        Self {
+            kind: CheckKind::Clippy,
+            command,
+            command_string: String::from("cargo clippy --all --tests -- -D warnings"),
+        }
+    }
+
+    fn execute(mut self, start: time::Instant) -> Result<Option<String>> {
+        let pb = create_pb();
+
+        match &self.kind {
+            CheckKind::Check => pb.set_message("Checking package..."),
+            CheckKind::Test => pb.set_message("Testing..."),
+            CheckKind::Fmt => pb.set_message("Checking formatting..."),
+            CheckKind::Clippy => pb.set_message("Checking lints..."),
+        }
+
+        let res = self.command.output()?.status.success();
+
+        pb.inc(1);
+
+        pb.set_style(generate_style(res));
+        pb.finish_with_message(self.kind.generate_msg(start));
+
+        if res {
+            Ok(None)
+        } else {
+            Ok(Some(self.command_string))
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum CheckKind {
+    Check,
+    Test,
+    Fmt,
+    Clippy,
+}
+
+impl CheckKind {
+    fn generate_msg(self, start: time::Instant) -> String {
+        let mut message = String::new();
+
+        match self {
+            CheckKind::Check => message.push_str("check  "),
+            CheckKind::Test => message.push_str("test   "),
+            CheckKind::Fmt => message.push_str("fmt    "),
+            CheckKind::Clippy => message.push_str("clippy "),
+        };
+
+        message.push_str(format!("({}s)", start.elapsed().as_secs()).as_str());
+
+        message
+    }
+}
+
+fn create_pb() -> ProgressBar {
+    let pb = ProgressBar::new(1);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{bar:5.white} {msg}")
+            .progress_chars("#>-"),
+    );
+
+    pb
+}
+
+fn generate_style(is_success: bool) -> ProgressStyle {
+    if is_success {
+        ProgressStyle::default_bar()
+            .template("{bar:5.green} {msg}")
+            .progress_chars("#>-")
+    } else {
+        ProgressStyle::default_bar()
+            .template("{bar:5.red} {msg}")
+            .progress_chars("#>-")
     }
 }
