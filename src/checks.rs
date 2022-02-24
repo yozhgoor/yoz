@@ -22,10 +22,14 @@ impl Checks {
         let start = std::time::Instant::now();
 
         if self.clean {
-            Command::new("cargo")
+            if Command::new("cargo")
                 .current_dir(&working_dir)
                 .arg("clean")
-                .status()?;
+                .output()?.status.success() {
+                println!("Cleaned");
+            } else {
+                log::error!("`cargo clean` failed");
+            }
         }
 
         let commands = vec![
