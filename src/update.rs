@@ -59,7 +59,9 @@ impl Update {
                 pull_command.current_dir(entry.path()).arg("pull");
 
                 let mut make_command = process::Command::new("makepkg");
-                make_command.current_dir(entry.path()).args(["--syncdeps", "--install", "--clean"]);
+                make_command
+                    .current_dir(entry.path())
+                    .args(["--syncdeps", "--install", "--clean"]);
                 pull_command.status()?;
 
                 make_command.status()?;
@@ -78,6 +80,10 @@ impl Update {
             command.args(["install-update", "--all"]);
 
             commands.push(command);
+        }
+
+        if commands.is_empty() {
+            log::error!("Please select something to update, or pass `--all`");
         }
 
         Ok(commands)
