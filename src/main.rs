@@ -6,6 +6,7 @@ mod checks;
 mod launch;
 mod license;
 mod new;
+mod update;
 mod workflow;
 
 #[derive(clap::Parser)]
@@ -14,6 +15,7 @@ enum Opt {
     Checks(checks::Checks),
     Launch(launch::Launch),
     New(new::New),
+    Update(update::Update),
 }
 
 fn main() -> Result<()> {
@@ -30,6 +32,7 @@ fn main() -> Result<()> {
         Opt::Checks(args) => args.run(),
         Opt::Launch(args) => args.run(),
         Opt::New(args) => args.run(),
+        Opt::Update(args) => args.run(),
     }
 }
 

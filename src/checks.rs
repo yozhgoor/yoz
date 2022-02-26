@@ -1,7 +1,7 @@
 use crate::set_working_dir;
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{path, process::Command, time};
+use std::{path, process, time};
 
 /// Run multiples checks on your Project and output if your code is ok or not.
 #[derive(Debug, clap::Parser)]
@@ -22,10 +22,13 @@ impl Checks {
         let start = std::time::Instant::now();
 
         if self.clean {
-            if Command::new("cargo")
+            if process::Command::new("cargo")
                 .current_dir(&working_dir)
                 .arg("clean")
-                .output()?.status.success() {
+                .output()?
+                .status
+                .success()
+            {
                 println!("Cleaned");
             } else {
                 log::error!("`cargo clean` failed");
@@ -59,13 +62,13 @@ impl Checks {
 #[derive(Debug)]
 struct ChecksCommand {
     kind: CheckKind,
-    command: Command,
+    command: process::Command,
     command_string: String,
 }
 
 impl ChecksCommand {
     fn check(working_dir: &path::Path) -> Self {
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command
             .current_dir(working_dir)
             .args(["check", "--workspace", "--all-features"]);
@@ -78,7 +81,7 @@ impl ChecksCommand {
     }
 
     fn test(working_dir: &path::Path) -> Self {
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command
             .current_dir(working_dir)
             .args(["test", "--workspace", "--all-features"]);
@@ -91,7 +94,7 @@ impl ChecksCommand {
     }
 
     fn fmt(working_dir: &path::Path) -> Self {
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command
             .current_dir(working_dir)
             .args(["fmt", "--all", "--check"]);
@@ -104,7 +107,7 @@ impl ChecksCommand {
     }
 
     fn clippy(working_dir: &path::Path) -> Self {
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command
             .current_dir(working_dir)
             .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
