@@ -3,6 +3,7 @@ use std::{env, path};
 
 mod add;
 mod checks;
+mod install;
 mod launch;
 mod license;
 mod new;
@@ -13,6 +14,7 @@ mod workflow;
 enum Opt {
     Add(add::Add),
     Checks(checks::Checks),
+    Install(install::Install),
     Launch(launch::Launch),
     New(new::New),
     Update(update::Update),
@@ -30,6 +32,7 @@ fn main() -> Result<()> {
     match opt {
         Opt::Add(args) => args.run(),
         Opt::Checks(args) => args.run(),
+        Opt::Install(args) => args.run(),
         Opt::Launch(args) => args.run(),
         Opt::New(args) => args.run(),
         Opt::Update(args) => args.run(),
