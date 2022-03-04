@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::process;
+use walkdir::WalkDir;
 
 #[derive(Debug, clap::Parser)]
 pub struct Install {
@@ -20,11 +21,14 @@ impl Install {
     pub fn run(self) -> Result<()> {
         if let Some(name) = self.name {
             if self.cargo {
-                Manager::Cargo.check_or_install(name, None)?;
-            } else if self.aur.is_some() {
-                Manager::Aur.check_or_install(name, self.aur)?;
+                Manager::Cargo(name).check_or_install()?;
+            } else if let Some(url) = self.aur {
+                Manager::Aur {
+                    program: name,
+                    url,
+                }.check_or_install()?;
             } else {
-                Manager::Pacman.check_or_install(name, None)?;
+                Manager::Pacman(name).check_or_install()?;
             }
         } else {
             if self.prelude {
@@ -43,23 +47,18 @@ impl Install {
                 let mut aur_programs = std::collections::HashMap::new();
                 aur_programs.insert("spotify", "https://aur.archlinux.org/spotify.git");
 
-                let pacman_programs = vec![
-                    "discord",
-                    "feh",
-                    "flameshot",
-                    "neovim",
-                ];
+                let pacman_programs = vec!["discord", "feh", "flameshot", "neovim"];
 
                 for program in cargo_programs {
-                    Manager::Cargo.check_or_install(program.to_string(), None)?;
+                    Manager::Cargo(program.to_string()).check_or_install()?;
                 }
 
                 for (program, url) in aur_programs {
-                    Manager::Aur.check_or_install(program.to_string(), Some(url.to_string()))?;
+                    Manager::Aur { program: program.to_string(), url: url.to_string() }.check_or_install()?;
                 }
 
                 for program in pacman_programs {
-                    Manager::Pacman.check_or_install(program.to_string(), None)?;
+                    Manager::Pacman(program.to_string()).check_or_install()?;
                 }
             } else {
                 log::error!("Please select something to install");
@@ -72,44 +71,52 @@ impl Install {
 
 #[derive(Debug)]
 enum Manager {
-    Aur,
-    Cargo,
-    Pacman,
+    Aur {
+        program: String,
+        url: String,
+    },
+    Cargo(String),
+    Pacman(String),
 }
 
 impl Manager {
-    fn check_or_install(self, program: String, url: Option<String>) -> Result<()> {
-        let check_status = process::Command::new(&program).arg("--version").status();
+    fn check_or_install(self) -> Result<()> {
+        match self {
+            Self::Aur { program, url } => {
+                let builds_dir = dirs::home_dir()
+                    .expect("cannot get home directory")
+                    .join(".builds");
 
-        if let Err(_) = check_status {
-            log::info!("Installing {}", &program);
-            match self {
-                Self::Aur => {
-                    let builds_dir = dirs::home_dir().expect("cannot get home directory");
-                    let url = url.expect("Cannot install via AUR without url");
-                    process::Command::new("git")
-                        .current_dir(&builds_dir)
-                        .args(["clone", &url])
-                        .status()?;
-                    process::Command::new("makepkg")
-                        .current_dir(&builds_dir.join(&program))
-                        .args(["--syncdeps", "--install", "--clean"]);
+                for entry in WalkDir::new(&builds_dir) {
+
                 }
-                Self::Cargo => {
-                    process::Command::new("cargo")
-                        .args(["install", &program])
-                        .status()?;
-                }
-                Self::Pacman => {
-                    process::Command::new("sudo")
-                        .args(["pacman", "--sync", &program])
-                        .status()?;
-                }
+
+                let clone_status = process::Command::new("git")
+                    .args(["clone", &url])
+                    .status()?;
+                let install_status = process::Command::new("makepkg")
+                    .current_dir(&builds_dir.join(&program))
+                    .args(["--syncdeps", "--install", "--clean"])
+                    .status()?;
             }
-        } else if check_status?.success() {
-            log::info!("{} is already installed", &program);
-        } else {
-            log::error!("an error occurred when checking {}", &program);
+            Self::Cargo(program) => {
+                let output = process::Command::new("cargo")
+                    .args(["install", "--list"])
+                    .output()?;
+
+                let install_status = process::Command::new("cargo")
+                    .args(["install", &program])
+                    .status()?;
+            }
+            Self::Pacman(program) => {
+                let output = process::Command::new("pacman")
+                    .arg("-Q")
+                    .output()?;
+
+                let install_status = process::Command::new("sudo")
+                    .args(["pacman", "--sync", &program])
+                    .status()?;
+            }
         }
 
         Ok(())
