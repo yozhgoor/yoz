@@ -25,7 +25,10 @@ impl Checks {
             if Command::new("cargo")
                 .current_dir(&working_dir)
                 .arg("clean")
-                .output()?.status.success() {
+                .output()?
+                .status
+                .success()
+            {
                 println!("Cleaned");
             } else {
                 log::error!("`cargo clean` failed");
