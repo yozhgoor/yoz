@@ -3,11 +3,14 @@ use std::{env, path};
 
 mod add;
 mod checks;
+mod config;
 mod launch;
 mod license;
 mod new;
 mod screen;
 mod workflow;
+
+use crate::config::Config;
 
 #[derive(clap::Parser)]
 enum Opt {
@@ -27,12 +30,20 @@ fn main() -> Result<()> {
         .filter(Some("yoz"), log::LevelFilter::Info)
         .init();
 
+    let config = match Config::get_or_create() {
+        Ok(config) => config,
+        Err(err) => {
+            log::error!("an error occurred with the config file: {}", err);
+            Config::new()
+        }
+    };
+
     match opt {
         Opt::Add(args) => args.run(),
         Opt::Checks(args) => args.run(),
         Opt::Launch(args) => args.run(),
         Opt::New(args) => args.run(),
-        Opt::Screen(args) => args.run(),
+        Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
     }
 }
 
