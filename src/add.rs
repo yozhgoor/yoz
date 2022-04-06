@@ -34,9 +34,9 @@ impl Add {
         let full_name = if let Some(full_name) = self.full_name {
             full_name
         } else if let Some(full_name) = default_full_name {
-                full_name
+            full_name
         } else {
-                bail!("default full name not configured")
+            bail!("default full name not configured")
         };
 
         if self.licenses {
