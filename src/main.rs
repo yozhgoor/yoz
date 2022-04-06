@@ -1,12 +1,16 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::{env, path};
 
 mod add;
 mod checks;
+mod config;
 mod launch;
 mod license;
 mod new;
+mod screen;
 mod workflow;
+
+use crate::config::Config;
 
 #[derive(clap::Parser)]
 enum Opt {
@@ -14,6 +18,7 @@ enum Opt {
     Checks(checks::Checks),
     Launch(launch::Launch),
     New(new::New),
+    Screen(screen::Screen),
 }
 
 fn main() -> Result<()> {
@@ -25,11 +30,24 @@ fn main() -> Result<()> {
         .filter(Some("yoz"), log::LevelFilter::Info)
         .init();
 
+    let config = match Config::get_or_create() {
+        Ok(config) => config,
+        Err(err) => {
+            bail!("an error occurred with the config file: {}", err);
+        }
+    };
+
     match opt {
-        Opt::Add(args) => args.run(),
+        Opt::Add(args) => args.run(config.default_full_name),
         Opt::Checks(args) => args.run(),
         Opt::Launch(args) => args.run(),
-        Opt::New(args) => args.run(),
+        Opt::New(args) => args.run(config.default_full_name),
+        Opt::Screen(args) => args.run(
+            config.main_monitor,
+            config.external_monitor,
+            config.bg_file_path,
+            config.bg_position,
+        ),
     }
 }
 
