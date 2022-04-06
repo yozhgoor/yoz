@@ -21,9 +21,4 @@ indicatif = "0.16"
 log = "0.4"
 serde = "1.0"
 toml = "0.5"
-
-[target.'cfg(windows)'.dependencies]
-dirs = "4"
-
-[target.'cfg(unix)'.dependencies]
 xdg = "2.2"

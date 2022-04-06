@@ -27,21 +27,22 @@ jobs:
           path: |
             target/x86_64-unknown-linux-gnu/release/yoz
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v2
-      - name: Build release (Windows)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=x86_64-windows-msvc
-      - uses: actions/upload-artifact@v2
-        with:
-          name: build-windows
-          path: |
-            target/x86_64-windows-msvc/release/yoz
+  # not intended to work on Windows at the moment
+  # build-windows:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Checkout source
+  #       uses: actions/checkout@v2
+  #     - name: Build release (Windows)
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: build
+  #         args: --release --target=x86_64-windows-msvc
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         name: build-windows
+  #         path: |
+  #           target/x86_64-windows-msvc/release/yoz
 
   build-osx:
     runs-on: macos-latest
@@ -60,7 +61,8 @@ jobs:
             target/x86_64-apple-darwin/release/yoz
 
   release:
-    needs: [build-linux, build-windows, build-osx]
+    # Do not forget to add `build-windows` if needed
+    needs: [build-linux, build-osx]
     runs-on: ubuntu-latest
     steps:
       - name: Get the version
@@ -72,11 +74,12 @@ jobs:
           path: build-linux
       - run: mv build-linux/yoz build-linux/yoz-${{ steps.get_version.outputs.VERSION }}-linux-x86_64
 
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-windows
-          path: build-windows
-      - run: mv build-windows/yoz build-windows/yoz-${{ steps.get_version.outputs.VERSION }}-windows-x86_64
+     # not intended to work on Windows at the moment
+     #  - uses: actions/download-artifact@v2
+     #    with:
+     #      name: build-windows
+     #      path: build-windows
+     #  - run: mv build-windows/yoz build-windows/yoz-${{ steps.get_version.outputs.VERSION }}-windows-x86_64
 
       - uses: actions/download-artifact@v2
         with:
@@ -91,5 +94,5 @@ jobs:
         with:
           files: |
             build-linux/*
-            build-windows/*
+            # build-windows/*
             build-osx/*
