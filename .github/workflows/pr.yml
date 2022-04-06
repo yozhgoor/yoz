@@ -50,7 +50,7 @@ jobs:
   #         args: --workspace
 
   test-osx:
-    runs-on: windows-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v2
