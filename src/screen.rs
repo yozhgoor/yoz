@@ -92,7 +92,7 @@ impl Screen {
                     .arg(external_monitor.name)
                     .arg("--mode")
                     .arg(external_monitor_mode)
-                    .arg("refresh")
+                    .arg("--refresh")
                     .arg(format!("{}", external_monitor.rate))
                     .status()?
                     .success(),
