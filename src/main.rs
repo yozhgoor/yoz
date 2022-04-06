@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::{env, path};
 
 mod add;
@@ -33,17 +33,21 @@ fn main() -> Result<()> {
     let config = match Config::get_or_create() {
         Ok(config) => config,
         Err(err) => {
-            log::error!("an error occurred with the config file: {}", err);
-            Config::new()
+            bail!("an error occurred with the config file: {}", err);
         }
     };
 
     match opt {
-        Opt::Add(args) => args.run(),
+        Opt::Add(args) => args.run(config.default_full_name),
         Opt::Checks(args) => args.run(),
         Opt::Launch(args) => args.run(),
-        Opt::New(args) => args.run(),
-        Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
+        Opt::New(args) => args.run(config.default_full_name),
+        Opt::Screen(args) => args.run(
+            config.main_monitor,
+            config.external_monitor,
+            config.bg_file_path,
+            config.bg_position,
+        ),
     }
 }
 
