@@ -1,5 +1,5 @@
 use crate::set_working_dir;
-use anyhow::{ensure, Result};
+use anyhow::{bail, ensure, Result};
 use std::{path, process};
 
 /// Launch a given program and open a new terminal at the same current
@@ -22,7 +22,7 @@ pub struct Launch {
 }
 
 impl Launch {
-    pub fn run(self) -> Result<()> {
+    pub fn run(self, default_launch_command: Vec<String>) -> Result<()> {
         log::debug!("{:?}", self);
 
         let working_dir = set_working_dir(self.path)?;
@@ -31,12 +31,17 @@ impl Launch {
             log::info!("No command provided");
             None
         } else if self.command.is_empty() {
-            let mut main_process = process::Command::new("nvim");
-            main_process.current_dir(&working_dir);
-            main_process.arg(".");
+            if !default_launch_command.is_empty() {
+                let mut it = default_launch_command.iter();
+                let mut main_process = process::Command::new(it.next().unwrap());
+                main_process.current_dir(&working_dir);
+                main_process.args(it);
 
-            log::info!("Launching Neovim");
-            Some(main_process)
+                log::info!("Using the default command");
+                Some(main_process)
+            } else {
+                bail!("no default command provided");
+            }
         } else {
             let mut it = self.command.iter();
             let mut main_process = process::Command::new(it.next().unwrap());

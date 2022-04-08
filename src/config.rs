@@ -5,19 +5,24 @@ use std::{fs, path::PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    // Background
-    pub bg_file_path: Option<PathBuf>,
-    pub bg_position: Option<Position>,
+    // Launch
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub default_launch_command: Vec<String>,
     // Licenses
     pub default_full_name: Option<String>,
     // Screen
     pub main_monitor: Option<Monitor>,
     pub external_monitor: Option<Monitor>,
+    // Background
+    pub bg_file_path: Option<PathBuf>,
+    pub bg_position: Option<Position>,
 }
 
 impl Config {
     fn new() -> Self {
         Self {
+            default_launch_command: Vec::new(),
             default_full_name: None,
             main_monitor: None,
             external_monitor: None,
