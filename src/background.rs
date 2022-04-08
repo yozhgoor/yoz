@@ -2,12 +2,18 @@ use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use std::{fmt, path::PathBuf, process, str::FromStr};
 
-/// Set the background using a path to an image and a position.
+/// Set the background.
+///
+/// You can optionally use a path to an image and a position.
 ///
 /// If no image are provided, this will fail.
 #[derive(Debug, clap::Parser)]
 pub struct Background {
+    /// Provide the path of the image to set as background.
+    #[clap(long, short = 'f')]
     file_path: Option<PathBuf>,
+    /// Position of the background image
+    #[clap(long, short = 'p')]
     position: Option<Position>,
 }
 
