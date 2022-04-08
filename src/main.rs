@@ -47,7 +47,7 @@ fn main() -> Result<()> {
         Opt::Add(args) => args.run(config.default_full_name),
         Opt::Background(args) => args.run(config.bg_file_path, config.bg_position),
         Opt::Checks(args) => args.run(),
-        Opt::Launch(args) => args.run(),
+        Opt::Launch(args) => args.run(config.default_launch_command),
         Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
     }
