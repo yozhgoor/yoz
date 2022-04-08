@@ -68,7 +68,7 @@ impl FromStr for Position {
             "fill" => Self::Fill,
             "max" => Self::Max,
             "scale" => Self::Scale,
-            "Tile" => Self::Tile,
+            "tile" => Self::Tile,
             _ => bail!("Cannot parse position from {}", s),
         };
 

@@ -4,9 +4,9 @@ use std::{fmt, process, str::FromStr};
 
 /// Enable or disabled provided monitors in the config file.
 ///
-/// If nothing is provided as argument, this will list the detected monitors.
+/// If nothing is provided as argument, both monitors will be enabled.
 ///
-/// This subcommand aims to be used with a laptop and, optionally, an external
+/// This subcommand aims to be used with a laptop and an external
 /// screen.
 #[derive(Debug, clap::Parser)]
 pub struct Screen {
