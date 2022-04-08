@@ -77,21 +77,21 @@ impl Launch {
                     "launch command failed"
                 );
 
-            if let Some(mut child) = term_child {
+                if let Some(mut child) = term_child {
                     child.kill()?;
                     child.wait()?;
                 }
             }
-        (Some(mut main), None) => {
+            (Some(mut main), None) => {
                 ensure!(
                     main.status().expect("cannot launch main process").success(),
                     "main process failed",
                 );
             }
-        (None, Some(mut term)) => {
+            (None, Some(mut term)) => {
                 ensure!(term.spawn().is_ok(), "terminal process failed",);
             }
-        (None, None) => unimplemented!(),
+            (None, None) => unimplemented!(),
         }
 
         Ok(())
