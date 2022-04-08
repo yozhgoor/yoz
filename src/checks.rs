@@ -17,6 +17,8 @@ pub struct Checks {
 
 impl Checks {
     pub fn run(self) -> Result<()> {
+        log::debug!("{:?}", self);
+
         let working_dir = set_working_dir(self.path)?;
 
         let start = std::time::Instant::now();
