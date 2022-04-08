@@ -10,41 +10,43 @@ pub struct Launch {
     path: Option<path::PathBuf>,
     /// Launch the given command.
     ///
-    /// If nothing is provided, `nvim .` will be used.
+    /// If nothing is provided, `launch_command` from your config file
+    /// would be used.
     #[clap(short = 'x', long)]
     command: Vec<String>,
-    /// Do not launch terminal along the launched program.
+    /// .
     #[clap(short = 't', long)]
-    no_terminal: bool,
+    terminal: Vec<String>,
     /// Start only a terminal at the given working directory.
     #[clap(short = 'c', long)]
     no_command: bool,
 }
 
 impl Launch {
-    pub fn run(self, default_launch_command: Vec<String>) -> Result<()> {
-        log::debug!("{:?}", self);
-
+    pub fn run(
+        self,
+        default_launch_command: Vec<String>,
+        default_terminal_command: Vec<String>,
+    ) -> Result<()> {
         let working_dir = set_working_dir(self.path)?;
 
         let main_process = if self.no_command {
-            log::info!("No command provided");
             None
         } else if self.command.is_empty() {
             if !default_launch_command.is_empty() {
                 let mut it = default_launch_command.iter();
-                let mut main_process = process::Command::new(it.next().unwrap());
+                let mut main_process = process::Command::new(it.next().expect("it is not empty"));
                 main_process.current_dir(&working_dir);
                 main_process.args(it);
 
-                log::info!("Using the default command");
+                log::info!("Launching the default command");
                 Some(main_process)
             } else {
-                bail!("no default command provided");
+                bail!("Please configure `launch_command` in your config file");
             }
         } else {
             let mut it = self.command.iter();
-            let mut main_process = process::Command::new(it.next().unwrap());
+            let mut main_process = process::Command::new(it.next().expect("it is not empty"));
             main_process.current_dir(&working_dir);
             main_process.args(it);
 
@@ -52,14 +54,25 @@ impl Launch {
             Some(main_process)
         };
 
-        let terminal_process = if !self.no_terminal {
-            let mut terminal_process = process::Command::new("alacritty");
-            terminal_process.arg("--working-directory").arg(working_dir);
+        let terminal_process = if !self.terminal.is_empty() {
+            let mut it = self.terminal.iter();
+            let mut terminal_process =
+                process::Command::new(it.next().expect("self.terminal cannot be empty"));
+            terminal_process.args(it);
 
+            log::info!("Launching given terminal command");
+            Some(terminal_process)
+        } else if !default_terminal_command.is_empty() {
+            let mut it = default_terminal_command.iter();
+            let mut terminal_process =
+                process::Command::new(it.next().expect("default_terminal_command cannot be empty"));
+            terminal_process.current_dir(&working_dir);
+            terminal_process.args(it);
+
+            log::info!("Launching default terminal command");
             Some(terminal_process)
         } else {
-            log::info!("Use the command directly instead");
-            None
+            bail!("Please configure `terminal_command` in your config file");
         };
 
         match (main_process, terminal_process) {

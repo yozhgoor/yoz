@@ -31,17 +31,15 @@ impl Screen {
         main_monitor: Option<Monitor>,
         external_monitor: Option<Monitor>,
     ) -> Result<()> {
-        log::debug!("{:?}", self);
-
         let main_monitor = match main_monitor {
             Some(monitor) => monitor,
-            None => bail!("main monitor not configured"),
+            None => bail!("Please configure `main_monitor` in your config file"),
         };
         let main_monitor_mode = format!("{}x{}", main_monitor.width, main_monitor.height);
 
         let external_monitor = match external_monitor {
             Some(monitor) => monitor,
-            None => bail!("external monitor not configured"),
+            None => bail!("Please configure `external_monitor` in your config file"),
         };
         let external_monitor_mode =
             format!("{}x{}", external_monitor.width, external_monitor.height);

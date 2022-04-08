@@ -35,8 +35,6 @@ pub struct New {
 
 impl New {
     pub fn run(self, default_full_name: Option<String>) -> Result<()> {
-        log::debug!("{:?}", self);
-
         let working_dir = set_working_dir(self.path)?;
 
         let project_dir_path = working_dir.join(&self.name);

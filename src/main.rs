@@ -32,8 +32,6 @@ fn main() -> Result<()> {
 
     let opt: Opt = clap::Parser::parse();
 
-    log::debug!("{:?}", opt);
-
     let config = match Config::get_or_create() {
         Ok(config) => config,
         Err(err) => {
@@ -41,13 +39,19 @@ fn main() -> Result<()> {
         }
     };
 
-    log::debug!("{:?}", config);
-
     match opt {
         Opt::Add(args) => args.run(config.default_full_name),
-        Opt::Background(args) => args.run(config.bg_file_path, config.bg_position),
-        Opt::Checks(args) => args.run(),
-        Opt::Launch(args) => args.run(config.default_launch_command),
+        Opt::Background(args) => args.run(config.default_bg_file_path, config.default_bg_position),
+        Opt::Checks(args) => args.run(
+            config.default_check_args,
+            config.default_test_args,
+            config.default_fmt_args,
+            config.default_clippy_args,
+        ),
+        Opt::Launch(args) => args.run(
+            config.default_launch_command,
+            config.default_terminal_command,
+        ),
         Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
     }

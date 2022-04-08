@@ -13,12 +13,28 @@ pub struct Checks {
     /// Remove the target directory.
     #[clap(long)]
     clean: bool,
+    /// Arguments given to the `cargo check` command.
+    #[clap(long = "check")]
+    check_args: Vec<String>,
+    /// Arguments given to the `cargo test` command.
+    #[clap(long = "test")]
+    test_args: Vec<String>,
+    /// Arguments given to the `cargo fmt` command.
+    #[clap(long = "fmt")]
+    fmt_args: Vec<String>,
+    /// Arguments given to the `cargo clippy` command.
+    #[clap(long = "clippy")]
+    clippy_args: Vec<String>,
 }
 
 impl Checks {
-    pub fn run(self) -> Result<()> {
-        log::debug!("{:?}", self);
-
+    pub fn run(
+        self,
+        default_check_args: Vec<String>,
+        default_test_args: Vec<String>,
+        default_fmt_args: Vec<String>,
+        default_clippy_args: Vec<String>,
+    ) -> Result<()> {
         let working_dir = set_working_dir(self.path)?;
 
         let start = std::time::Instant::now();
@@ -31,17 +47,38 @@ impl Checks {
                 .status
                 .success()
             {
-                println!("Cleaned");
+                log::info!("Cleaned");
             } else {
                 log::error!("`cargo clean` failed");
             }
         }
 
+        let check_args = if !self.check_args.is_empty() {
+            self.check_args
+        } else {
+            default_check_args
+        };
+        let test_args = if !self.test_args.is_empty() {
+            self.test_args
+        } else {
+            default_test_args
+        };
+        let fmt_args = if !self.fmt_args.is_empty() {
+            self.fmt_args
+        } else {
+            default_fmt_args
+        };
+        let clippy_args = if !self.clippy_args.is_empty() {
+            self.clippy_args
+        } else {
+            default_clippy_args
+        };
+
         let commands = vec![
-            ChecksCommand::check(&working_dir),
-            ChecksCommand::test(&working_dir),
-            ChecksCommand::fmt(&working_dir),
-            ChecksCommand::clippy(&working_dir),
+            ChecksCommand::check(&working_dir, check_args),
+            ChecksCommand::test(&working_dir, test_args),
+            ChecksCommand::fmt(&working_dir, fmt_args),
+            ChecksCommand::clippy(&working_dir, clippy_args),
         ];
 
         let failed_commands = commands
@@ -53,7 +90,7 @@ impl Checks {
             println!();
             println!("Fails ({}):", failed_commands.len());
             for command in failed_commands {
-                println!("{command}");
+                println!("{}", command);
             }
         }
 
@@ -69,55 +106,83 @@ struct ChecksCommand {
 }
 
 impl ChecksCommand {
-    fn check(working_dir: &path::Path) -> Self {
+    fn check(working_dir: &path::Path, args: Vec<String>) -> Self {
+        let mut command_string = String::from("cargo check");
+
         let mut command = Command::new("cargo");
-        command
-            .current_dir(working_dir)
-            .args(["check", "--workspace", "--all-features"]);
+        command.current_dir(working_dir).arg("check");
+
+        for arg in args {
+            command_string.push(' ');
+            command_string.push_str(&arg);
+
+            command.arg(arg);
+        }
 
         Self {
             kind: CheckKind::Check,
             command,
-            command_string: String::from("cargo check --workspace --all-features"),
+            command_string,
         }
     }
 
-    fn test(working_dir: &path::Path) -> Self {
+    fn test(working_dir: &path::Path, args: Vec<String>) -> Self {
+        let mut command_string = String::from("cargo test");
+
         let mut command = Command::new("cargo");
-        command
-            .current_dir(working_dir)
-            .args(["test", "--workspace", "--all-features"]);
+        command.current_dir(working_dir).arg("test");
+
+        for arg in args {
+            command_string.push(' ');
+            command_string.push_str(&arg);
+
+            command.arg(arg);
+        }
 
         Self {
             kind: CheckKind::Test,
             command,
-            command_string: String::from("cargo test --workspace --all-features"),
+            command_string,
         }
     }
 
-    fn fmt(working_dir: &path::Path) -> Self {
+    fn fmt(working_dir: &path::Path, args: Vec<String>) -> Self {
+        let mut command_string = String::from("cargo fmt");
+
         let mut command = Command::new("cargo");
-        command
-            .current_dir(working_dir)
-            .args(["fmt", "--all", "--check"]);
+        command.current_dir(working_dir).arg("fmt");
+
+        for arg in args {
+            command_string.push(' ');
+            command_string.push_str(&arg);
+
+            command.arg(arg);
+        }
 
         Self {
             kind: CheckKind::Fmt,
             command,
-            command_string: String::from("cargo fmt --all --check"),
+            command_string,
         }
     }
 
-    fn clippy(working_dir: &path::Path) -> Self {
+    fn clippy(working_dir: &path::Path, args: Vec<String>) -> Self {
+        let mut command_string = String::from("cargo clippy");
+
         let mut command = Command::new("cargo");
-        command
-            .current_dir(working_dir)
-            .args(["clippy", "--all", "--tests", "--", "-D", "warnings"]);
+        command.current_dir(working_dir).arg("clippy");
+
+        for arg in args {
+            command_string.push(' ');
+            command_string.push_str(&arg);
+
+            command.arg(arg);
+        }
 
         Self {
             kind: CheckKind::Clippy,
             command,
-            command_string: String::from("cargo clippy --all --tests -- -D warnings"),
+            command_string,
         }
     }
 

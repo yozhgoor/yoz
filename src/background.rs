@@ -9,24 +9,24 @@ use std::{fmt, path::PathBuf, process, str::FromStr};
 /// If no image are provided, this will fail.
 #[derive(Debug, clap::Parser)]
 pub struct Background {
-    /// Provide the path of the image to set as background.
+    /// Path of the image to set as background.
     #[clap(long, short = 'f')]
     file_path: Option<PathBuf>,
     /// Position of the background image
+    ///
+    /// Available options are: Center, Fill, Max, Scale, Tile.
     #[clap(long, short = 'p')]
     position: Option<Position>,
 }
 
 impl Background {
     pub fn run(self, bg_file_path: Option<PathBuf>, bg_position: Option<Position>) -> Result<()> {
-        log::debug!("{:?}", self);
-
         let bg_file_path = if let Some(file_path) = self.file_path {
             file_path
         } else if let Some(file_path) = bg_file_path {
             file_path
         } else {
-            bail!("no file has been provided for the background");
+            bail!("Please configure `bg_file_path` in your config file");
         };
 
         let bg_position = if let Some(position) = self.position {
@@ -34,7 +34,7 @@ impl Background {
         } else if let Some(position) = bg_position {
             position
         } else {
-            Position::Fill
+            bail!("Please configure `bg_position` in your config file");
         };
 
         let mut process = process::Command::new("feh");

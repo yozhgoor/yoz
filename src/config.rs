@@ -5,29 +5,55 @@ use std::{fs, path::PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    // Checks
+    #[serde(default, rename = "check_args", skip_serializing_if = "Vec::is_empty")]
+    pub default_check_args: Vec<String>,
+    #[serde(default, rename = "test_args", skip_serializing_if = "Vec::is_empty")]
+    pub default_test_args: Vec<String>,
+    #[serde(default, rename = "fmt_args", skip_serializing_if = "Vec::is_empty")]
+    pub default_fmt_args: Vec<String>,
+    #[serde(default, rename = "clippy_args", skip_serializing_if = "Vec::is_empty")]
+    pub default_clippy_args: Vec<String>,
     // Launch
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        rename = "launch_command",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_launch_command: Vec<String>,
+    #[serde(
+        default,
+        rename = "terminal_command",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub default_terminal_command: Vec<String>,
     // Licenses
+    #[serde(rename = "full_name")]
     pub default_full_name: Option<String>,
     // Screen
     pub main_monitor: Option<Monitor>,
     pub external_monitor: Option<Monitor>,
     // Background
-    pub bg_file_path: Option<PathBuf>,
-    pub bg_position: Option<Position>,
+    #[serde(rename = "bg_file_path")]
+    pub default_bg_file_path: Option<PathBuf>,
+    #[serde(rename = "bg_position")]
+    pub default_bg_position: Option<Position>,
 }
 
 impl Config {
     fn new() -> Self {
         Self {
+            default_check_args: Vec::new(),
+            default_test_args: Vec::new(),
+            default_fmt_args: Vec::new(),
+            default_clippy_args: Vec::new(),
             default_launch_command: Vec::new(),
+            default_terminal_command: Vec::new(),
             default_full_name: None,
             main_monitor: None,
             external_monitor: None,
-            bg_file_path: None,
-            bg_position: None,
+            default_bg_file_path: None,
+            default_bg_position: None,
         }
     }
 
