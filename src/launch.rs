@@ -4,7 +4,7 @@ use std::{path, process};
 
 /// Launch a given program and open a new terminal at the same current
 /// directory.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct Launch {
     /// Working directory of the processes.
     path: Option<path::PathBuf>,
@@ -23,6 +23,8 @@ pub struct Launch {
 
 impl Launch {
     pub fn run(self) -> Result<()> {
+        log::debug!("{:?}", self);
+
         let working_dir = set_working_dir(self.path)?;
 
         let main_process = if self.no_command {

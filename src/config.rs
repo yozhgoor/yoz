@@ -1,9 +1,9 @@
-use crate::screen::Monitor;
+use crate::{background::Position, screen::Monitor};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{fmt, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     // Launch
     #[serde(default)]
@@ -17,7 +17,6 @@ pub struct Config {
     // Background
     pub bg_file_path: Option<PathBuf>,
     pub bg_position: Option<Position>,
-
 }
 
 impl Config {
@@ -54,26 +53,5 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub enum Position {
-    Center,
-    Fill,
-    Max,
-    Scale,
-    Tile,
-}
-
-impl fmt::Display for Position {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Center => write!(f, "center"),
-            Self::Fill => write!(f, "fill"),
-            Self::Max => write!(f, "max"),
-            Self::Scale => write!(f, "scale"),
-            Self::Tile => write!(f, "tile"),
-        }
     }
 }

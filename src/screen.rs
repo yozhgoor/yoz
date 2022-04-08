@@ -1,15 +1,14 @@
-use crate::config::Position;
 use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
-use std::{fmt, path::PathBuf, process, str::FromStr};
+use std::{fmt, process, str::FromStr};
 
-/// Set up screens using xrandr.
+/// Enable or disabled provided monitors in the config file.
 ///
-/// If nothing is provided as argument, this will list the detected monitors.
+/// If nothing is provided as argument, both monitors will be enabled.
 ///
-/// This subcommand aims to be used with a laptop and, optionally, an external
+/// This subcommand aims to be used with a laptop and an external
 /// screen.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct Screen {
     /// Enable the main screen and disable the external screen.
     #[clap(long)]
@@ -31,9 +30,9 @@ impl Screen {
         self,
         main_monitor: Option<Monitor>,
         external_monitor: Option<Monitor>,
-        bg_file_path: Option<PathBuf>,
-        bg_position: Option<Position>,
     ) -> Result<()> {
+        log::debug!("{:?}", self);
+
         let main_monitor = match main_monitor {
             Some(monitor) => monitor,
             None => bail!("main monitor not configured"),
@@ -70,21 +69,6 @@ impl Screen {
             {
                 log::error!("cannot disable external monitor");
             }
-
-            if let Some(file_path) = bg_file_path {
-                let mut process = process::Command::new("feh");
-                if let Some(position) = bg_position {
-                    process.arg(format!("--bg-{}", position));
-                } else {
-                    process.arg("--bg-fill");
-                }
-
-                process.arg(file_path);
-
-                if !process.status()?.success() {
-                    log::error!("cannot set the desktop background")
-                }
-            }
         } else if self.external {
             ensure!(
                 process::Command::new("xrandr")
@@ -107,21 +91,6 @@ impl Screen {
                 .success()
             {
                 log::error!("cannot disable main monitor");
-            }
-
-            if let Some(file_path) = bg_file_path {
-                let mut process = process::Command::new("feh");
-                if let Some(position) = bg_position {
-                    process.arg(format!("--bg-{}", position));
-                } else {
-                    process.arg("--bg-fill");
-                }
-
-                process.arg(file_path);
-
-                if !process.status()?.success() {
-                    log::error!("cannot set the desktop background")
-                }
             }
         } else {
             ensure!(
@@ -151,21 +120,6 @@ impl Screen {
                     .success(),
                 "cannot enable main monitor",
             );
-
-            if let Some(file_path) = bg_file_path {
-                let mut process = process::Command::new("feh");
-                if let Some(position) = bg_position {
-                    process.arg(format!("--bg-{}", position));
-                } else {
-                    process.arg("--bg-fill");
-                }
-
-                process.arg(file_path);
-
-                if !process.status()?.success() {
-                    log::error!("cannot set the desktop background")
-                }
-            }
         }
 
         Ok(())
@@ -180,6 +134,7 @@ pub struct Monitor {
     pub rate: u8,
 }
 
+#[derive(Debug)]
 enum Direction {
     Left,
     Right,
