@@ -3,7 +3,7 @@ use anyhow::{bail, Result};
 use std::path;
 
 /// Add useful content to your Rust project.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct Add {
     /// Path where you want to add the content.
     #[clap(short = 'p', long)]
@@ -30,6 +30,8 @@ pub struct Add {
 
 impl Add {
     pub fn run(self, default_full_name: Option<String>) -> Result<()> {
+        log::debug!("{:?}", self);
+
         let working_dir = set_working_dir(self.path)?;
         let full_name = if let Some(full_name) = self.full_name {
             full_name

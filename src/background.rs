@@ -5,7 +5,7 @@ use std::{fmt, path::PathBuf, process, str::FromStr};
 /// Set the background using a path to an image and a position.
 ///
 /// If no image are provided, this will fail.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct Background {
     file_path: Option<PathBuf>,
     position: Option<Position>,
@@ -13,6 +13,8 @@ pub struct Background {
 
 impl Background {
     pub fn run(self, bg_file_path: Option<PathBuf>, bg_position: Option<Position>) -> Result<()> {
+        log::debug!("{:?}", self);
+
         let bg_file_path = if let Some(file_path) = self.file_path {
             file_path
         } else if let Some(file_path) = bg_file_path {

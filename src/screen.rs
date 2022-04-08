@@ -8,7 +8,7 @@ use std::{fmt, process, str::FromStr};
 ///
 /// This subcommand aims to be used with a laptop and, optionally, an external
 /// screen.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct Screen {
     /// Enable the main screen and disable the external screen.
     #[clap(long)]
@@ -31,6 +31,8 @@ impl Screen {
         main_monitor: Option<Monitor>,
         external_monitor: Option<Monitor>,
     ) -> Result<()> {
+        log::debug!("{:?}", self);
+
         let main_monitor = match main_monitor {
             Some(monitor) => monitor,
             None => bail!("main monitor not configured"),
@@ -132,6 +134,7 @@ pub struct Monitor {
     pub rate: u8,
 }
 
+#[derive(Debug)]
 enum Direction {
     Left,
     Right,

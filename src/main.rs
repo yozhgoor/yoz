@@ -13,7 +13,7 @@ mod workflow;
 
 use crate::config::Config;
 
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 enum Opt {
     Add(add::Add),
     Background(background::Background),
@@ -24,13 +24,15 @@ enum Opt {
 }
 
 fn main() -> Result<()> {
-    let opt: Opt = clap::Parser::parse();
-
     env_logger::builder()
         .format_timestamp(None)
         .format_module_path(false)
         .filter(Some("yoz"), log::LevelFilter::Info)
         .init();
+
+    let opt: Opt = clap::Parser::parse();
+
+    log::debug!("{:?}", opt);
 
     let config = match Config::get_or_create() {
         Ok(config) => config,
@@ -38,6 +40,8 @@ fn main() -> Result<()> {
             bail!("an error occurred with the config file: {}", err);
         }
     };
+
+    log::debug!("{:?}", config);
 
     match opt {
         Opt::Add(args) => args.run(config.default_full_name),
