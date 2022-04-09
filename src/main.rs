@@ -10,6 +10,7 @@ mod launch;
 mod license;
 mod new;
 mod screen;
+mod shot;
 mod update;
 mod workflow;
 
@@ -17,7 +18,7 @@ use crate::config::Config;
 
 #[derive(Debug, clap::Parser)]
 #[clap(
-    about = "This project aims to help my workflow\n\nDon't expect any kind of stability there."
+    about = "This project aims to help my workflow.\n\nDon't expect any kind of stability there."
 )]
 enum Opt {
     Add(add::Add),
@@ -27,6 +28,7 @@ enum Opt {
     Launch(launch::Launch),
     New(new::New),
     Screen(screen::Screen),
+    Shot(shot::Shot),
     Update(update::Update),
 }
 
@@ -62,6 +64,7 @@ fn main() -> Result<()> {
         ),
         Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
+        Opt::Shot(args) => args.run(),
         Opt::Update(args) => args.run(config.aur_dir),
     }
 }
