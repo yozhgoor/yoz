@@ -5,22 +5,29 @@ mod add;
 mod background;
 mod checks;
 mod config;
+mod install;
 mod launch;
 mod license;
 mod new;
 mod screen;
+mod update;
 mod workflow;
 
 use crate::config::Config;
 
 #[derive(Debug, clap::Parser)]
+#[clap(
+    about = "This project aims to help my workflow\n\nDon't expect any kind of stability there."
+)]
 enum Opt {
     Add(add::Add),
     Background(background::Background),
     Checks(checks::Checks),
+    Install(install::Install),
     Launch(launch::Launch),
     New(new::New),
     Screen(screen::Screen),
+    Update(update::Update),
 }
 
 fn main() -> Result<()> {
@@ -48,12 +55,14 @@ fn main() -> Result<()> {
             config.default_fmt_args,
             config.default_clippy_args,
         ),
+        Opt::Install(args) => args.run(config.aur_dir),
         Opt::Launch(args) => args.run(
             config.default_launch_command,
             config.default_terminal_command,
         ),
         Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
+        Opt::Update(args) => args.run(config.aur_dir),
     }
 }
 

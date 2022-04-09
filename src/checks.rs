@@ -1,9 +1,9 @@
 use crate::set_working_dir;
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{path, process::Command, time};
+use std::{path, process, time};
 
-/// Run multiples checks on your Project and output if your code is ok or not.
+/// Run multiples checks on your project.
 #[derive(Debug, clap::Parser)]
 pub struct Checks {
     /// Path of the project that will be checked.
@@ -40,7 +40,7 @@ impl Checks {
         let start = std::time::Instant::now();
 
         if self.clean {
-            if Command::new("cargo")
+            if process::Command::new("cargo")
                 .current_dir(&working_dir)
                 .arg("clean")
                 .output()?
@@ -101,7 +101,7 @@ impl Checks {
 #[derive(Debug)]
 struct ChecksCommand {
     kind: CheckKind,
-    command: Command,
+    command: process::Command,
     command_string: String,
 }
 
@@ -109,7 +109,7 @@ impl ChecksCommand {
     fn check(working_dir: &path::Path, args: Vec<String>) -> Self {
         let mut command_string = String::from("cargo check");
 
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command.current_dir(working_dir).arg("check");
 
         for arg in args {
@@ -129,7 +129,7 @@ impl ChecksCommand {
     fn test(working_dir: &path::Path, args: Vec<String>) -> Self {
         let mut command_string = String::from("cargo test");
 
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command.current_dir(working_dir).arg("test");
 
         for arg in args {
@@ -149,7 +149,7 @@ impl ChecksCommand {
     fn fmt(working_dir: &path::Path, args: Vec<String>) -> Self {
         let mut command_string = String::from("cargo fmt");
 
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command.current_dir(working_dir).arg("fmt");
 
         for arg in args {
@@ -169,7 +169,7 @@ impl ChecksCommand {
     fn clippy(working_dir: &path::Path, args: Vec<String>) -> Self {
         let mut command_string = String::from("cargo clippy");
 
-        let mut command = Command::new("cargo");
+        let mut command = process::Command::new("cargo");
         command.current_dir(working_dir).arg("clippy");
 
         for arg in args {

@@ -2,7 +2,7 @@ use crate::{license, set_working_dir, workflow};
 use anyhow::{bail, ensure, Result};
 use std::{fs, path, process};
 
-/// Create a new Rust project with some defaults.
+/// Create a new Rust project with some additions.
 #[derive(Debug, clap::Parser)]
 pub struct New {
     /// Name of the Rust project.
