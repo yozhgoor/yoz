@@ -16,7 +16,9 @@ mod workflow;
 use crate::config::Config;
 
 #[derive(Debug, clap::Parser)]
-#[clap(about = "This project aims to help my workflow\n\nDon't expect any kind of stability there.")]
+#[clap(
+    about = "This project aims to help my workflow\n\nDon't expect any kind of stability there."
+)]
 enum Opt {
     Add(add::Add),
     Background(background::Background),
