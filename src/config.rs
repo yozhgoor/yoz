@@ -5,7 +5,7 @@ use std::{fs, path::PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    // Checks
+    // checks
     #[serde(default, rename = "check_args", skip_serializing_if = "Vec::is_empty")]
     pub default_check_args: Vec<String>,
     #[serde(default, rename = "test_args", skip_serializing_if = "Vec::is_empty")]
@@ -14,7 +14,7 @@ pub struct Config {
     pub default_fmt_args: Vec<String>,
     #[serde(default, rename = "clippy_args", skip_serializing_if = "Vec::is_empty")]
     pub default_clippy_args: Vec<String>,
-    // Launch
+    // launch
     #[serde(
         default,
         rename = "launch_command",
@@ -27,17 +27,20 @@ pub struct Config {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub default_terminal_command: Vec<String>,
-    // Licenses
+    // licenses
     #[serde(rename = "full_name")]
     pub default_full_name: Option<String>,
-    // Screen
+    // screen
     pub main_monitor: Option<Monitor>,
     pub external_monitor: Option<Monitor>,
-    // Background
-    #[serde(rename = "bg_file_path")]
+    // background
+    #[serde(rename = "background_file_path")]
     pub default_bg_file_path: Option<PathBuf>,
-    #[serde(rename = "bg_position")]
+    #[serde(rename = "background_position")]
     pub default_bg_position: Option<Position>,
+    // install/update
+    #[serde(rename = "aur_directory")]
+    pub aur_dir: Option<PathBuf>,
 }
 
 impl Config {
@@ -50,10 +53,11 @@ impl Config {
             default_launch_command: Vec::new(),
             default_terminal_command: Vec::new(),
             default_full_name: None,
-            main_monitor: None,
-            external_monitor: None,
             default_bg_file_path: None,
             default_bg_position: None,
+            main_monitor: None,
+            external_monitor: None,
+            aur_dir: None,
         }
     }
 

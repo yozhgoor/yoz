@@ -15,6 +15,9 @@ mod workflow;
 
 use crate::config::Config;
 
+/// This project aims to help my workflow on:
+///
+/// Don't expect any kind of stability there.
 #[derive(Debug, clap::Parser)]
 enum Opt {
     Add(add::Add),
@@ -52,7 +55,7 @@ fn main() -> Result<()> {
             config.default_fmt_args,
             config.default_clippy_args,
         ),
-        Opt::Install(args) => args.run(),
+        Opt::Install(args) => args.run(config.aur_dir),
         Opt::Launch(args) => args.run(
             config.default_launch_command,
             config.default_terminal_command,
