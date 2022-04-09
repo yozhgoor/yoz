@@ -23,10 +23,7 @@ impl Install {
             if self.cargo {
                 Manager::Cargo(name).check_or_install()?;
             } else if let Some(url) = self.aur {
-                Manager::Aur {
-                    program: name,
-                    url,
-                }.check_or_install()?;
+                Manager::Aur { program: name, url }.check_or_install()?;
             } else {
                 Manager::Pacman(name).check_or_install()?;
             }
@@ -54,7 +51,11 @@ impl Install {
                 }
 
                 for (program, url) in aur_programs {
-                    Manager::Aur { program: program.to_string(), url: url.to_string() }.check_or_install()?;
+                    Manager::Aur {
+                        program: program.to_string(),
+                        url: url.to_string(),
+                    }
+                    .check_or_install()?;
                 }
 
                 for program in pacman_programs {
@@ -71,10 +72,7 @@ impl Install {
 
 #[derive(Debug)]
 enum Manager {
-    Aur {
-        program: String,
-        url: String,
-    },
+    Aur { program: String, url: String },
     Cargo(String),
     Pacman(String),
 }
@@ -87,9 +85,7 @@ impl Manager {
                     .expect("cannot get home directory")
                     .join(".builds");
 
-                for entry in WalkDir::new(&builds_dir) {
-
-                }
+                for entry in WalkDir::new(&builds_dir) {}
 
                 let clone_status = process::Command::new("git")
                     .args(["clone", &url])
@@ -109,9 +105,7 @@ impl Manager {
                     .status()?;
             }
             Self::Pacman(program) => {
-                let output = process::Command::new("pacman")
-                    .arg("-Q")
-                    .output()?;
+                let output = process::Command::new("pacman").arg("-Q").output()?;
 
                 let install_status = process::Command::new("sudo")
                     .args(["pacman", "--sync", &program])
