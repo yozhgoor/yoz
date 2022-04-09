@@ -3,7 +3,7 @@ use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::{path, process, time};
 
-/// Run multiples checks on your Project and output if your code is ok or not.
+/// Run multiples checks on your project.
 #[derive(Debug, clap::Parser)]
 pub struct Checks {
     /// Path of the project that will be checked.

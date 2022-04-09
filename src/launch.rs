@@ -2,8 +2,7 @@ use crate::set_working_dir;
 use anyhow::{bail, ensure, Result};
 use std::{path, process};
 
-/// Launch a given program and open a new terminal at the same current
-/// directory.
+/// Launch a program and a terminal at the same working directory.
 #[derive(Debug, clap::Parser)]
 pub struct Launch {
     /// Working directory of the processes.

@@ -2,7 +2,7 @@ use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use std::{fmt, process, str::FromStr};
 
-/// Enable or disabled provided monitors in the config file.
+/// Enable or disable provided monitors.
 ///
 /// If nothing is provided as argument, both monitors will be enabled.
 ///
