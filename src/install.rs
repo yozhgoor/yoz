@@ -1,5 +1,5 @@
 use anyhow::{bail, ensure, Result};
-use std::{process, path::PathBuf};
+use std::{path::PathBuf, process};
 
 /// Install a package.
 ///
@@ -19,22 +19,25 @@ pub struct Install {
 
 impl Install {
     pub fn run(self, aur_dir: Option<PathBuf>) -> Result<()> {
-        match process::Command::new(&self.name)
-            .arg("--version")
-            .status() {
-                Ok(status) if status.success() => {
-                    log::info!("{} is already installed", &self.name)
-                }
-                _ => {
-                    if self.cargo {
-                        Manager::Cargo(self.name).install()?;
-                    } else if let Some(url) = self.aur {
-                        Manager::Aur { program: self.name, url, dir: aur_dir }.install()?;
-                    } else {
-                        Manager::Pacman(self.name).install()?;
+        match process::Command::new(&self.name).arg("--version").status() {
+            Ok(status) if status.success() => {
+                log::info!("{} is already installed", &self.name)
+            }
+            _ => {
+                if self.cargo {
+                    Manager::Cargo(self.name).install()?;
+                } else if let Some(url) = self.aur {
+                    Manager::Aur {
+                        program: self.name,
+                        url,
+                        dir: aur_dir,
                     }
+                    .install()?;
+                } else {
+                    Manager::Pacman(self.name).install()?;
                 }
             }
+        }
 
         Ok(())
     }
@@ -42,7 +45,11 @@ impl Install {
 
 #[derive(Debug)]
 enum Manager {
-    Aur { program: String, url: String, dir: Option<PathBuf> },
+    Aur {
+        program: String,
+        url: String,
+        dir: Option<PathBuf>,
+    },
     Cargo(String),
     Pacman(String),
 }
@@ -63,7 +70,8 @@ impl Manager {
                         .args(["clone", &url])
                         .status()?
                         .success(),
-                    "cannot clone source from {}", &url
+                    "cannot clone source from {}",
+                    &url
                 );
 
                 ensure!(
@@ -72,7 +80,8 @@ impl Manager {
                         .args(["--syncdeps", "--install", "--clean"])
                         .status()?
                         .success(),
-                    "cannot install {} from AUR", &program
+                    "cannot install {} from AUR",
+                    &program
                 );
             }
             Self::Cargo(program) => {
@@ -81,7 +90,8 @@ impl Manager {
                         .args(["install", &program])
                         .status()?
                         .success(),
-                    "cannot install {} via cargo", &program
+                    "cannot install {} via cargo",
+                    &program
                 );
             }
             Self::Pacman(program) => {
@@ -90,7 +100,8 @@ impl Manager {
                         .args(["pacman", "--sync", &program])
                         .status()?
                         .success(),
-                    "cannot install {} via pacman", &program
+                    "cannot install {} via pacman",
+                    &program
                 );
             }
         }

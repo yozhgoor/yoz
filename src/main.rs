@@ -62,7 +62,7 @@ fn main() -> Result<()> {
         ),
         Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
-        Opt::Update(args) => args.run(),
+        Opt::Update(args) => args.run(config.aur_dir),
     }
 }
 
