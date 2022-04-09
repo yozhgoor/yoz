@@ -79,7 +79,7 @@ jobs:
             workflow,
             include_str!("../templates/ci/test"),
             job_name = "test-osx",
-            platform = "windows-latest"
+            platform = "macos-latest"
         )?;
     }
 
@@ -127,7 +127,7 @@ jobs:
             workflow,
             include_str!("../templates/ci/test"),
             job_name = "test-osx",
-            platform = "windows-latest"
+            platform = "macos-latest"
         )?;
     }
 

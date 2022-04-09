@@ -1,9 +1,9 @@
 use crate::{license, set_working_dir, workflow};
-use anyhow::{ensure, Result};
+use anyhow::{bail, ensure, Result};
 use std::{fs, path, process};
 
 /// Create a new Rust project with some defaults.
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 pub struct New {
     /// Name of the Rust project.
     name: String,
@@ -34,7 +34,7 @@ pub struct New {
 }
 
 impl New {
-    pub fn run(self) -> Result<()> {
+    pub fn run(self, default_full_name: Option<String>) -> Result<()> {
         let working_dir = set_working_dir(self.path)?;
 
         let project_dir_path = working_dir.join(&self.name);
@@ -83,7 +83,16 @@ impl New {
 
         if !self.no_license {
             log::info!("Generating licenses");
-            license::add_licenses(&project_dir_path, self.full_name)?;
+            match self.full_name {
+                Some(full_name) => license::add_licenses(&project_dir_path, full_name)?,
+                None => {
+                    if let Some(full_name) = default_full_name {
+                        license::add_licenses(&project_dir_path, full_name)?;
+                    } else {
+                        bail!("default full name not configured");
+                    }
+                }
+            }
         }
 
         if !self.no_ci {
