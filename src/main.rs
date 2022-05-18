@@ -38,7 +38,7 @@ fn main() -> Result<()> {
     env_logger::builder()
         .format_timestamp(None)
         .format_module_path(false)
-        .filter(Some("yoz"), log::LevelFilter::Info)
+        .filter(Some("yoz"), log::LevelFilter::Debug)
         .init();
 
     let opt: Opt = clap::Parser::parse();
@@ -59,7 +59,11 @@ fn main() -> Result<()> {
             config.default_fmt_args,
             config.default_clippy_args,
         ),
-        Opt::Dotfiles(args) => args.run(),
+        Opt::Dotfiles(args) => args.run(
+            config.default_repository_path,
+            config.config_files_dir,
+            config.config_repository_url,
+        ),
         Opt::Install(args) => args.run(config.aur_dir),
         Opt::Launch(args) => args.run(config.default_editor, config.default_terminal),
         Opt::New(args) => args.run(config.default_full_name),

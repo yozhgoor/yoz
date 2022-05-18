@@ -37,6 +37,10 @@ pub struct Config {
     pub bar_path: Option<PathBuf>,
     pub bar_position: Option<String>,
     pub home_symbol: Option<String>,
+    pub config_files_dir: Option<PathBuf>,
+    pub config_repository_url: Option<String>,
+    #[serde(rename = "repository_path")]
+    pub default_repository_path: Option<PathBuf>,
 }
 
 impl Config {
@@ -62,6 +66,9 @@ impl Config {
             bar_path: None,
             bar_position: None,
             home_symbol: None,
+            config_files_dir: None,
+            config_repository_url: None,
+            default_repository_path: None,
         }
     }
 
@@ -133,6 +140,9 @@ impl Config {
             bar_path: Some(PathBuf::from("/home/yozhgoor/.config/i3status-rs/config")),
             bar_position: Some("top".to_string()),
             home_symbol: Some("yoz".to_string()),
+            config_files_dir: Some(PathBuf::from("config-files")),
+            config_repository_url: Some("git@github.com:yozhgoor/config-files.git".to_string()),
+            default_repository_path: Some(PathBuf::from("/home/yozhgoor/repos")),
         }
     }
 }
