@@ -5,6 +5,7 @@ mod add;
 mod background;
 mod checks;
 mod config;
+mod dotfiles;
 mod install;
 mod launch;
 mod license;
@@ -24,6 +25,7 @@ enum Opt {
     Add(add::Add),
     Background(background::Background),
     Checks(checks::Checks),
+    Dotfiles(dotfiles::Dotfiles),
     Install(install::Install),
     Launch(launch::Launch),
     New(new::New),
@@ -57,6 +59,7 @@ fn main() -> Result<()> {
             config.default_fmt_args,
             config.default_clippy_args,
         ),
+        Opt::Dotfiles(args) => args.run(),
         Opt::Install(args) => args.run(config.aur_dir),
         Opt::Launch(args) => args.run(config.default_editor, config.default_terminal),
         Opt::New(args) => args.run(config.default_full_name),
