@@ -58,10 +58,7 @@ fn main() -> Result<()> {
             config.default_clippy_args,
         ),
         Opt::Install(args) => args.run(config.aur_dir),
-        Opt::Launch(args) => args.run(
-            config.default_launch_command,
-            config.default_terminal_command,
-        ),
+        Opt::Launch(args) => args.run(config.default_editor, config.default_terminal),
         Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
         Opt::Shot(args) => args.run(),
