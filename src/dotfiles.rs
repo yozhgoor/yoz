@@ -20,6 +20,7 @@ pub struct Dotfiles {
     home_symbol: Option<String>,
 }
 
+#[allow(clippy::too_many_arguments)]
 impl Dotfiles {
     pub fn run(
         self,
@@ -117,7 +118,7 @@ fn get_or_download_config_files(
 fn generate_cargo_temp(
     temporary_project_dir: PathBuf,
     editor: String,
-    terminal: String,
+    mut terminal: String,
 ) -> Result<()> {
     let cargo_temp_path =
         xdg::BaseDirectories::with_prefix("cargo-temp")?.place_config_file("config.toml")?;
@@ -155,11 +156,11 @@ fn generate_i3(
             .to_str()
             .expect("bg_file_path contains non UTF-8 characters")
     );
-    let it = fonts.iter();
-    let fonts = it.next().expect("fonts is empty");
+    let mut it = fonts.into_iter();
+    let mut fonts = it.next().expect("fonts is empty");
     for i in it {
         fonts.push(' ');
-        fonts.push_str(i);
+        fonts.push_str(&i);
     }
     let bar_position = "top";
 
@@ -186,7 +187,7 @@ fn generate_i3status(net_device: String) -> Result<PathBuf> {
         xdg::BaseDirectories::with_prefix("i3status")?.place_config_file("config.toml")?;
 
     fs::write(
-        i3status_path,
+        i3status_path.clone(),
         format!(
             include_str!("../../config-files/i3status"),
             net_device = net_device,

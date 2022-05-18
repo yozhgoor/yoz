@@ -63,6 +63,16 @@ fn main() -> Result<()> {
             config.default_repository_path,
             config.config_files_dir,
             config.config_repository_url,
+            config.temporary_project_path,
+            config.default_editor,
+            config.default_terminal,
+            config.default_bg_position,
+            config.default_bg_file_path,
+            config.default_fonts,
+            config.default_fonts_size,
+            config.default_browser,
+            config.default_net_device,
+            config.default_home_symbol,
         ),
         Opt::Install(args) => args.run(config.aur_dir),
         Opt::Launch(args) => args.run(config.default_editor, config.default_terminal),
@@ -117,14 +127,14 @@ fn values_or_default<T>(
 }
 
 fn program_or_default(
-    program: Option<impl AsRef<std::ffi::OsStr>>,
-    default: Option<impl AsRef<std::ffi::OsStr>>,
+    program: Option<String>,
+    default: Option<String>,
     config_value: impl AsRef<str>,
 ) -> Result<process::Command> {
     let program = if let Some(program) = program {
-        program.as_ref()
+        program
     } else if let Some(program) = default {
-        program.as_ref()
+        program
     } else {
         bail!(
             "Please configure `{}` in your config file",

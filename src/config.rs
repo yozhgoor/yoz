@@ -26,21 +26,20 @@ pub struct Config {
     pub temporary_project_path: Option<PathBuf>,
     pub default_editor: Option<String>,
     pub default_terminal: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subprocess_command: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub fonts: Vec<String>,
-    #[serde(default)]
-    pub fonts_size: Option<u32>,
+    #[serde(default, rename = "fonts", skip_serializing_if = "Vec::is_empty")]
+    pub default_fonts: Vec<String>,
+    #[serde(rename = "fonts_size")]
+    pub default_fonts_size: Option<u32>,
     #[serde(rename = "browser")]
     pub default_browser: Option<String>,
-    pub bar_path: Option<PathBuf>,
-    pub bar_position: Option<String>,
-    pub home_symbol: Option<String>,
+    #[serde(rename = "home_symbol")]
+    pub default_home_symbol: Option<String>,
     pub config_files_dir: Option<PathBuf>,
     pub config_repository_url: Option<String>,
     #[serde(rename = "repository_path")]
     pub default_repository_path: Option<PathBuf>,
+    #[serde(rename = "net_device")]
+    pub default_net_device: Option<String>,
 }
 
 impl Config {
@@ -59,16 +58,14 @@ impl Config {
             temporary_project_path: None,
             default_editor: None,
             default_terminal: None,
-            subprocess_command: Vec::new(),
-            fonts: Vec::new(),
-            fonts_size: None,
+            default_fonts: Vec::new(),
+            default_fonts_size: None,
             default_browser: None,
-            bar_path: None,
-            bar_position: None,
-            home_symbol: None,
+            default_home_symbol: None,
             config_files_dir: None,
             config_repository_url: None,
             default_repository_path: None,
+            default_net_device: None,
         }
     }
 
@@ -90,6 +87,7 @@ impl Config {
         Ok(config)
     }
 
+    #[allow(unused)]
     fn dot() -> Self {
         Self {
             default_check_args: vec!["--workspace".to_string(), "--all-features".to_string()],
@@ -122,27 +120,18 @@ impl Config {
             temporary_project_path: Some(PathBuf::from("/home/yozhgoor/.cache/cargo-temp/")),
             default_editor: Some("nvim".to_string()),
             default_terminal: Some("alacritty".to_string()),
-            subprocess_command: vec![
-                "alacritty".to_string(),
-                "-e".to_string(),
-                "cargo".to_string(),
-                "watch".to_string(),
-                "-x".to_string(),
-                "check".to_string(),
-            ],
-            fonts: vec![
+            default_fonts: vec![
                 "Hack Nerd Font".to_string(),
                 "DejaVu Sans Mono".to_string(),
                 "Font Awesome".to_string(),
             ],
-            fonts_size: Some(8),
+            default_fonts_size: Some(8),
             default_browser: Some("Firefox".to_string()),
-            bar_path: Some(PathBuf::from("/home/yozhgoor/.config/i3status-rs/config")),
-            bar_position: Some("top".to_string()),
-            home_symbol: Some("yoz".to_string()),
+            default_home_symbol: Some("yoz".to_string()),
             config_files_dir: Some(PathBuf::from("config-files")),
             config_repository_url: Some("git@github.com:yozhgoor/config-files.git".to_string()),
             default_repository_path: Some(PathBuf::from("/home/yozhgoor/repos")),
+            default_net_device: Some("wlp1s0".to_string()),
         }
     }
 }
