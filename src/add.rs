@@ -1,5 +1,5 @@
-use crate::{license, set_working_dir, workflow};
-use anyhow::{bail, Result};
+use crate::{license, set_working_dir, value_or_default, workflow};
+use anyhow::Result;
 use std::path;
 
 /// Add useful content to your Rust project.
@@ -34,13 +34,7 @@ impl Add {
     pub fn run(self, default_full_name: Option<String>) -> Result<()> {
         let working_dir = set_working_dir(self.path)?;
 
-        let full_name = if let Some(full_name) = self.full_name {
-            full_name
-        } else if let Some(full_name) = default_full_name {
-            full_name
-        } else {
-            bail!("Please configure `full_name` in your config file")
-        };
+        let full_name = value_or_default(self.full_name, default_full_name, "full_name")?;
 
         if self.licenses {
             log::info!("Generating licenses");

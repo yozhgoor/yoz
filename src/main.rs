@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use std::{env, path};
+use std::{env, path, process};
 
 mod add;
 mod background;
@@ -80,4 +80,56 @@ fn set_working_dir(path: Option<path::PathBuf>) -> Result<path::PathBuf> {
     };
 
     Ok(working_dir)
+}
+
+fn value_or_default<T>(
+    value: Option<T>,
+    default: Option<T>,
+    config_value: impl AsRef<str>,
+) -> Result<T> {
+    if let Some(value) = value {
+        Ok(value)
+    } else if let Some(default) = default {
+        Ok(default)
+    } else {
+        bail!(
+            "Please configure `{}` in your config file",
+            config_value.as_ref()
+        )
+    }
+}
+
+fn values_or_default<T>(
+    value: Vec<T>,
+    default: Vec<T>,
+    config_value: impl AsRef<str>,
+) -> Result<Vec<T>> {
+    if !value.is_empty() {
+        Ok(value)
+    } else if !default.is_empty() {
+        Ok(default)
+    } else {
+        bail!(
+            "Please configure `{}` in your config file",
+            config_value.as_ref()
+        )
+    }
+}
+
+fn program_or_default(
+    program: Option<impl AsRef<std::ffi::OsStr>>,
+    default: Option<impl AsRef<std::ffi::OsStr>>,
+    config_value: impl AsRef<str>,
+) -> Result<process::Command> {
+    let program = if let Some(program) = program {
+        program.as_ref()
+    } else if let Some(program) = default {
+        program.as_ref()
+    } else {
+        bail!(
+            "Please configure `{}` in your config file",
+            config_value.as_ref()
+        );
+    };
+    Ok(process::Command::new(program))
 }

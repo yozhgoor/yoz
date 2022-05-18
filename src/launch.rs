@@ -1,6 +1,6 @@
-use crate::set_working_dir;
-use anyhow::{bail, ensure, Result};
-use std::{path::PathBuf, process};
+use crate::{program_or_default, set_working_dir};
+use anyhow::{ensure, Result};
+use std::path::PathBuf;
 
 /// Launch the editor and a terminal at the same working directory.
 #[derive(Debug, clap::Parser)]
@@ -20,50 +20,24 @@ pub struct Launch {
 impl Launch {
     pub fn run(
         self,
-        default_editor: Option<PathBuf>,
-        default_terminal: Option<PathBuf>,
+        default_editor: Option<String>,
+        default_terminal: Option<String>,
     ) -> Result<()> {
         let working_dir = set_working_dir(self.path)?;
 
         let editor_process = if !self.terminal_only {
-            if let Some(program) = self.editor {
-                let mut process = process::Command::new(program);
-                process.current_dir(&working_dir);
-                process.arg(".");
+            let mut process = program_or_default(self.editor, default_editor, "editor")?;
+            process.current_dir(&working_dir);
+            process.arg(".");
 
-                log::info!("Launching the given editor");
-                Some(process)
-            } else if let Some(program) = default_editor {
-                let mut process = process::Command::new(program);
-                process.current_dir(&working_dir);
-                process.arg(".");
-
-                log::info!("Launching the default editor");
-                Some(process)
-            } else {
-                bail!("Please configure `editor` in your config file");
-            }
+            Some(process)
         } else {
             None
         };
 
-        let mut terminal_process = if let Some(program) = self.terminal {
-            let mut process = process::Command::new(program);
-            process.current_dir(&working_dir);
-            process.arg(".");
-
-            log::info!("Launching the given terminal");
-            process
-        } else if let Some(program) = default_terminal {
-            let mut process = process::Command::new(program);
-            process.current_dir(&working_dir);
-            process.args(["--working-directory", "."]);
-
-            log::info!("Launching the default terminal");
-            process
-        } else {
-            bail!("Please configure `terminal` in your config file");
-        };
+        let mut terminal_process = program_or_default(self.terminal, default_terminal, "terminal")?;
+        terminal_process.current_dir(&working_dir);
+        terminal_process.args(["--working-directory", "."]);
 
         if let Some(mut editor) = editor_process {
             let terminal = match terminal_process.spawn() {

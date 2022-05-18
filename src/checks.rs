@@ -1,4 +1,4 @@
-use crate::set_working_dir;
+use crate::{set_working_dir, values_or_default};
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::{path, process, time};
@@ -53,26 +53,10 @@ impl Checks {
             }
         }
 
-        let check_args = if !self.check_args.is_empty() {
-            self.check_args
-        } else {
-            default_check_args
-        };
-        let test_args = if !self.test_args.is_empty() {
-            self.test_args
-        } else {
-            default_test_args
-        };
-        let fmt_args = if !self.fmt_args.is_empty() {
-            self.fmt_args
-        } else {
-            default_fmt_args
-        };
-        let clippy_args = if !self.clippy_args.is_empty() {
-            self.clippy_args
-        } else {
-            default_clippy_args
-        };
+        let check_args = values_or_default(self.check_args, default_check_args, "checks_args")?;
+        let test_args = values_or_default(self.test_args, default_test_args, "test_args")?;
+        let fmt_args = values_or_default(self.fmt_args, default_fmt_args, "fmt_args")?;
+        let clippy_args = values_or_default(self.clippy_args, default_clippy_args, "clippy_args")?;
 
         let commands = vec![
             ChecksCommand::check(&working_dir, check_args),

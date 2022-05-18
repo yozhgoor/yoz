@@ -1,118 +1,222 @@
-use anyhow::{bail, ensure, Result};
-use std::{path::PathBuf, process};
+use crate::{background::Position, value_or_default, values_or_default};
+use anyhow::{ensure, Result};
+use std::{fs, path::PathBuf, process};
 
 /// Generate config files from dotfiles
 #[derive(Debug, clap::Parser)]
 pub struct Dotfiles {
-    repository_path: Option<PathBuf>,
+    repositories_path: Option<PathBuf>,
     config_files_dir: Option<PathBuf>,
     config_repository_url: Option<String>,
+    temporary_project_dir: Option<PathBuf>,
+    editor: Option<String>,
+    terminal: Option<String>,
+    bg_position: Option<Position>,
+    bg_file_path: Option<PathBuf>,
+    fonts: Vec<String>,
+    fonts_size: Option<u32>,
+    browser: Option<String>,
+    net_device: Option<String>,
+    home_symbol: Option<String>,
 }
 
 impl Dotfiles {
     pub fn run(
         self,
-        default_repository_path: Option<PathBuf>,
+        default_repositories_path: Option<PathBuf>,
         default_config_files_dir: Option<PathBuf>,
         default_config_repository_url: Option<String>,
+        default_temporary_project_dir: Option<PathBuf>,
+        default_editor: Option<String>,
+        default_terminal: Option<String>,
+        default_bg_position: Option<Position>,
+        default_bg_file_path: Option<PathBuf>,
+        default_fonts: Vec<String>,
+        default_fonts_size: Option<u32>,
+        default_browser: Option<String>,
+        default_net_device: Option<String>,
+        default_home_symbol: Option<String>,
     ) -> Result<()> {
-        let repository_path = if let Some(path) = self.repository_path {
-            path
-        } else if let Some(path) = default_repository_path {
-            path
-        } else {
-            bail!("Please configure `repository_path` in your config file");
-        };
+        let repositories_path = value_or_default(
+            self.repositories_path,
+            default_repositories_path,
+            "repositories_path",
+        )?;
+        let config_files_dir = value_or_default(
+            self.config_files_dir,
+            default_config_files_dir,
+            "config_files_dir",
+        )?;
+        let config_files_path = repositories_path.join(config_files_dir);
+        let config_repository_url = value_or_default(
+            self.config_repository_url,
+            default_config_repository_url,
+            "config_repository_url",
+        )?;
+        get_or_download_config_files(config_files_path, config_repository_url, repositories_path)?;
 
-        let config_files_path = if let Some(dir) = self.config_files_dir {
-            repository_path.join(dir)
-        } else if let Some(dir) = default_config_files_dir {
-            repository_path.join(dir)
-        } else {
-            bail!("Please configure `config_files_path` in your config file");
-        };
+        let temporary_project_dir = value_or_default(
+            self.temporary_project_dir,
+            default_temporary_project_dir,
+            "temporary_project_dir",
+        )?;
+        let editor = value_or_default(self.editor, default_editor, "editor")?;
+        let terminal = value_or_default(self.terminal, default_terminal, "terminal")?;
+        generate_cargo_temp(temporary_project_dir, editor, terminal)?;
 
-        let config_repository_url = if let Some(url) = self.config_repository_url {
-            url
-        } else if let Some(url) = default_config_repository_url {
-            url
-        } else {
-            bail!("Please configure `config_repository_url` in your config file");
-        };
+        let net_device = value_or_default(self.net_device, default_net_device, "net_device")?;
+        let bar_path = generate_i3status(net_device)?;
 
-        let config_files = ConfigFiles::get_or_download(
-            config_files_path,
-            config_repository_url,
-            repository_path,
+        let bg_position = value_or_default(self.bg_position, default_bg_position, "bg_position")?;
+        let bg_file_path =
+            value_or_default(self.bg_file_path, default_bg_file_path, "bg_file_path")?;
+        let fonts = values_or_default(self.fonts, default_fonts, "fonts")?;
+        let fonts_size = value_or_default(self.fonts_size, default_fonts_size, "fonts_size")?;
+        let browser = value_or_default(self.browser, default_browser, "browser")?;
+        generate_i3(
+            bg_position,
+            bg_file_path,
+            fonts,
+            fonts_size,
+            browser,
+            bar_path,
         )?;
 
-        config_files.generate_cargo_temp()?;
-        config_files.generate_i3()?;
-        config_files.generate_i3status()?;
-        config_files.generate_nvim()?;
-        config_files.generate_starship()?;
+        generate_nvim()?;
+
+        let home_symbol = value_or_default(self.home_symbol, default_home_symbol, "home_symbol")?;
+        generate_starship(home_symbol)?;
 
         Ok(())
     }
 }
 
-struct ConfigFiles {
-    cargo_temp: PathBuf,
-    i3: PathBuf,
-    i3status: PathBuf,
-    nvim: PathBuf,
-    starship: PathBuf,
+fn get_or_download_config_files(
+    config_files_path: PathBuf,
+    config_repository_url: String,
+    repository_path: PathBuf,
+) -> Result<PathBuf> {
+    if config_files_path.exists() {
+        Ok(config_files_path)
+    } else {
+        log::info!("Downloading config files");
+        ensure!(
+            process::Command::new("git")
+                .arg("clone")
+                .arg(config_repository_url)
+                .current_dir(repository_path)
+                .status()?
+                .success(),
+            "cannot download config files"
+        );
+
+        Ok(config_files_path)
+    }
 }
 
-impl ConfigFiles {
-    fn get_or_download(
-        config_files_path: PathBuf,
-        config_repository_url: String,
-        repository_path: PathBuf,
-    ) -> Result<Self> {
-        let config_files_path = if config_files_path.exists() {
-            config_files_path
-        } else {
-            log::info!("Downloading config files");
-            ensure!(
-                process::Command::new("git")
-                    .arg("clone")
-                    .arg(config_repository_url)
-                    .current_dir(repository_path)
-                    .status()?
-                    .success(),
-                "cannot download config files"
-            );
+fn generate_cargo_temp(
+    temporary_project_dir: PathBuf,
+    editor: String,
+    terminal: String,
+) -> Result<()> {
+    let cargo_temp_path =
+        xdg::BaseDirectories::with_prefix("cargo-temp")?.place_config_file("config.toml")?;
 
-            config_files_path
-        };
+    terminal.push_str(" --command cargo watch -x check");
 
-        Ok(Self {
-            cargo_temp: config_files_path.join("cargo-temp"),
-            i3: config_files_path.join("i3"),
-            i3status: config_files_path.join("i3status"),
-            nvim: config_files_path.join("nvim"),
-            starship: config_files_path.join("starship"),
-        })
+    fs::write(
+        cargo_temp_path,
+        format!(
+            include_str!("../../config-files/cargo-temp"),
+            temporary_project_dir = temporary_project_dir
+                .to_str()
+                .expect("temporary_project_dir contains non UTF-8 characters"),
+            editor = editor,
+            subprocess_command = terminal,
+        ),
+    )?;
+
+    Ok(())
+}
+
+fn generate_i3(
+    bg_position: Position,
+    bg_file_path: PathBuf,
+    fonts: Vec<String>,
+    fonts_size: u32,
+    browser: String,
+    bar_path: PathBuf,
+) -> Result<()> {
+    let i3_path = xdg::BaseDirectories::with_prefix("i3")?.place_config_file("config")?;
+    let background_command = format!(
+        "feh --bg-{} {}",
+        bg_position,
+        bg_file_path
+            .to_str()
+            .expect("bg_file_path contains non UTF-8 characters")
+    );
+    let it = fonts.iter();
+    let fonts = it.next().expect("fonts is empty");
+    for i in it {
+        fonts.push(' ');
+        fonts.push_str(i);
     }
+    let bar_position = "top";
 
-    fn generate_cargo_temp(&self) -> Result<()> {
-        Ok(())
-    }
+    fs::write(
+        i3_path,
+        format!(
+            include_str!("../../config-files/i3"),
+            background_command = background_command,
+            fonts = fonts,
+            fonts_size = fonts_size,
+            browser = browser,
+            bar_path = bar_path
+                .to_str()
+                .expect("bar_path contains non UTF-8 characters"),
+            bar_position = bar_position,
+        ),
+    )?;
 
-    fn generate_i3(&self) -> Result<()> {
-        Ok(())
-    }
+    Ok(())
+}
 
-    fn generate_i3status(&self) -> Result<()> {
-        Ok(())
-    }
+fn generate_i3status(net_device: String) -> Result<PathBuf> {
+    let i3status_path =
+        xdg::BaseDirectories::with_prefix("i3status")?.place_config_file("config.toml")?;
 
-    fn generate_nvim(&self) -> Result<()> {
-        Ok(())
-    }
+    fs::write(
+        i3status_path,
+        format!(
+            include_str!("../../config-files/i3status"),
+            net_device = net_device,
+        ),
+    )?;
 
-    fn generate_starship(&self) -> Result<()> {
-        Ok(())
-    }
+    Ok(i3status_path)
+}
+
+fn generate_nvim() -> Result<()> {
+    let nvim_path = xdg::BaseDirectories::with_prefix("nvim")?.place_config_file("init.vim")?;
+
+    fs::copy(
+        PathBuf::from("/home/yozhgoor/repos/config-files/nvim"),
+        nvim_path,
+    )?;
+
+    Ok(())
+}
+
+fn generate_starship(home_symbol: String) -> Result<()> {
+    let starship_path = xdg::BaseDirectories::new()?.place_config_file("starship.toml")?;
+
+    fs::write(
+        starship_path,
+        format!(
+            include_str!("../../config-files/starship"),
+            home_symbol = home_symbol,
+        ),
+    )?;
+
+    Ok(())
 }

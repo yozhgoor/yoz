@@ -24,14 +24,14 @@ pub struct Config {
     #[serde(rename = "aur_directory")]
     pub aur_dir: Option<PathBuf>,
     pub temporary_project_path: Option<PathBuf>,
-    pub default_editor: Option<PathBuf>,
-    pub default_terminal: Option<PathBuf>,
+    pub default_editor: Option<String>,
+    pub default_terminal: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subprocess_command: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fonts: Vec<String>,
     #[serde(default)]
-    pub fonts_size: u32,
+    pub fonts_size: Option<u32>,
     #[serde(rename = "browser")]
     pub default_browser: Option<String>,
     pub bar_path: Option<PathBuf>,
@@ -61,7 +61,7 @@ impl Config {
             default_terminal: None,
             subprocess_command: Vec::new(),
             fonts: Vec::new(),
-            fonts_size: 0,
+            fonts_size: None,
             default_browser: None,
             bar_path: None,
             bar_position: None,
@@ -120,8 +120,8 @@ impl Config {
             }),
             aur_dir: Some(PathBuf::from("/home/yozhgoor/.builds")),
             temporary_project_path: Some(PathBuf::from("/home/yozhgoor/.cache/cargo-temp/")),
-            default_editor: Some(PathBuf::from("/usr/bin/nvim")),
-            default_terminal: Some(PathBuf::from("/usr/bin/alacritty")),
+            default_editor: Some("nvim".to_string()),
+            default_terminal: Some("alacritty".to_string()),
             subprocess_command: vec![
                 "alacritty".to_string(),
                 "-e".to_string(),
@@ -135,7 +135,7 @@ impl Config {
                 "DejaVu Sans Mono".to_string(),
                 "Font Awesome".to_string(),
             ],
-            fonts_size: 8,
+            fonts_size: Some(8),
             default_browser: Some("Firefox".to_string()),
             bar_path: Some(PathBuf::from("/home/yozhgoor/.config/i3status-rs/config")),
             bar_position: Some("top".to_string()),
