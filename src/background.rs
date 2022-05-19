@@ -1,3 +1,4 @@
+use crate::value_or_default;
 use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use std::{fmt, path::PathBuf, process, str::FromStr};
@@ -21,21 +22,8 @@ pub struct Background {
 
 impl Background {
     pub fn run(self, bg_file_path: Option<PathBuf>, bg_position: Option<Position>) -> Result<()> {
-        let bg_file_path = if let Some(file_path) = self.file_path {
-            file_path
-        } else if let Some(file_path) = bg_file_path {
-            file_path
-        } else {
-            bail!("Please configure `bg_file_path` in your config file");
-        };
-
-        let bg_position = if let Some(position) = self.position {
-            position
-        } else if let Some(position) = bg_position {
-            position
-        } else {
-            bail!("Please configure `bg_position` in your config file");
-        };
+        let bg_file_path = value_or_default(self.file_path, bg_file_path, "bg_file_path")?;
+        let bg_position = value_or_default(self.position, bg_position, "bg_position")?;
 
         let mut process = process::Command::new("feh");
         process.arg("--no-fehbg");

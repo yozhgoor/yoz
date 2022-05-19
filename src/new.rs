@@ -1,5 +1,5 @@
-use crate::{license, set_working_dir, workflow};
-use anyhow::{bail, ensure, Result};
+use crate::{license, set_working_dir, value_or_default, workflow};
+use anyhow::{ensure, Result};
 use std::{fs, path, process};
 
 /// Create a new Rust project with some additions.
@@ -83,16 +83,8 @@ impl New {
 
         if !self.no_license {
             log::info!("Generating licenses");
-            match self.full_name {
-                Some(full_name) => license::add_licenses(&project_dir_path, full_name)?,
-                None => {
-                    if let Some(full_name) = default_full_name {
-                        license::add_licenses(&project_dir_path, full_name)?;
-                    } else {
-                        bail!("default full name not configured");
-                    }
-                }
-            }
+            let full_name = value_or_default(self.full_name, default_full_name, "full_name")?;
+            license::add_licenses(&project_dir_path, full_name)?;
         }
 
         if !self.no_ci {

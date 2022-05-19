@@ -1,0 +1,7 @@
+temporary_project_dir = "{temporary_project_dir}"
+
+editor = "{editor}"
+
+[[subprocess]]
+command = "{subprocess_command}"
+foreground = false
