@@ -15,8 +15,6 @@ pub struct Config {
     pub default_clippy_args: Vec<String>,
     #[serde(rename = "full_name")]
     pub default_full_name: Option<String>,
-    pub main_monitor: Option<Monitor>,
-    pub external_monitor: Option<Monitor>,
     #[serde(rename = "background_file_path")]
     pub default_bg_file_path: Option<PathBuf>,
     #[serde(rename = "background_position")]
@@ -37,9 +35,11 @@ pub struct Config {
     pub config_files_dir: Option<PathBuf>,
     pub config_repository_url: Option<String>,
     #[serde(rename = "repository_path")]
-    pub default_repository_path: Option<PathBuf>,
+    pub default_repositories_path: Option<PathBuf>,
     #[serde(rename = "net_device")]
     pub default_net_device: Option<String>,
+    pub main_monitor: Option<Monitor>,
+    pub external_monitor: Option<Monitor>,
 }
 
 impl Config {
@@ -52,8 +52,6 @@ impl Config {
             default_full_name: None,
             default_bg_file_path: None,
             default_bg_position: None,
-            main_monitor: None,
-            external_monitor: None,
             aur_dir: None,
             temporary_project_path: None,
             default_editor: None,
@@ -64,8 +62,10 @@ impl Config {
             default_home_symbol: None,
             config_files_dir: None,
             config_repository_url: None,
-            default_repository_path: None,
+            default_repositories_path: None,
             default_net_device: None,
+            main_monitor: None,
+            external_monitor: None,
         }
     }
 
@@ -87,7 +87,6 @@ impl Config {
         Ok(config)
     }
 
-    #[allow(unused)]
     fn dot() -> Self {
         Self {
             default_check_args: vec!["--workspace".to_string(), "--all-features".to_string()],
@@ -104,18 +103,7 @@ impl Config {
             default_full_name: Some("Yohan Boogaert".to_string()),
             default_bg_file_path: Some(PathBuf::from("/home/yozhgoor/Pictures/BG_1920_1080.png")),
             default_bg_position: Some(Position::Fill),
-            main_monitor: Some(Monitor {
-                name: "eDP-1".to_string(),
-                width: 1920,
-                height: 1080,
-                rate: 60,
-            }),
-            external_monitor: Some(Monitor {
-                name: "HDMI-1".to_string(),
-                width: 1920,
-                height: 1080,
-                rate: 144,
-            }),
+
             aur_dir: Some(PathBuf::from("/home/yozhgoor/.builds")),
             temporary_project_path: Some(PathBuf::from("/home/yozhgoor/.cache/cargo-temp/")),
             default_editor: Some("nvim".to_string()),
@@ -130,9 +118,32 @@ impl Config {
             default_home_symbol: Some("yoz".to_string()),
             config_files_dir: Some(PathBuf::from("config-files")),
             config_repository_url: Some("git@github.com:yozhgoor/config-files.git".to_string()),
-            default_repository_path: Some(PathBuf::from("/home/yozhgoor/repos")),
+            default_repositories_path: Some(PathBuf::from("/home/yozhgoor/repos")),
             default_net_device: Some("wlp1s0".to_string()),
+            main_monitor: Some(Monitor {
+                name: "eDP-1".to_string(),
+                width: 1920,
+                height: 1080,
+                rate: 60,
+            }),
+            external_monitor: Some(Monitor {
+                name: "HDMI-1".to_string(),
+                width: 1920,
+                height: 1080,
+                rate: 144,
+            }),
         }
+    }
+
+    pub fn create_from_dot() -> Result<()> {
+        let config_file_path =
+            xdg::BaseDirectories::with_prefix("yoz")?.place_config_file("config.toml")?;
+
+        let config = Self::dot();
+        fs::write(&config_file_path, toml::ser::to_string(&config)?)?;
+        println!("Config file created at: {}", config_file_path.display());
+
+        Ok(())
     }
 }
 

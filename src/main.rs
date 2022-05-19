@@ -25,6 +25,7 @@ enum Opt {
     Add(add::Add),
     Background(background::Background),
     Checks(checks::Checks),
+    Config,
     Dotfiles(dotfiles::Dotfiles),
     Install(install::Install),
     Launch(launch::Launch),
@@ -59,8 +60,9 @@ fn main() -> Result<()> {
             config.default_fmt_args,
             config.default_clippy_args,
         ),
+        Opt::Config => Config::create_from_dot(),
         Opt::Dotfiles(args) => args.run(
-            config.default_repository_path,
+            config.default_repositories_path,
             config.config_files_dir,
             config.config_repository_url,
             config.temporary_project_path,

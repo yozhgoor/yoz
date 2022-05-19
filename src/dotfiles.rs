@@ -5,18 +5,31 @@ use std::{fs, path::PathBuf, process};
 /// Generate config files from dotfiles
 #[derive(Debug, clap::Parser)]
 pub struct Dotfiles {
+    #[clap(long)]
     repositories_path: Option<PathBuf>,
+    #[clap(long)]
     config_files_dir: Option<PathBuf>,
+    #[clap(long)]
     config_repository_url: Option<String>,
+    #[clap(long)]
     temporary_project_dir: Option<PathBuf>,
+    #[clap(long)]
     editor: Option<String>,
+    #[clap(long)]
     terminal: Option<String>,
+    #[clap(long)]
     bg_position: Option<Position>,
+    #[clap(long)]
     bg_file_path: Option<PathBuf>,
+    #[clap(long)]
     fonts: Vec<String>,
+    #[clap(long)]
     fonts_size: Option<u32>,
+    #[clap(long)]
     browser: Option<String>,
+    #[clap(long)]
     net_device: Option<String>,
+    #[clap(long)]
     home_symbol: Option<String>,
 }
 
@@ -159,7 +172,7 @@ fn generate_i3(
     let mut it = fonts.into_iter();
     let mut fonts = it.next().expect("fonts is empty");
     for i in it {
-        fonts.push(' ');
+        fonts.push_str(", ");
         fonts.push_str(&i);
     }
     let bar_position = "top";
