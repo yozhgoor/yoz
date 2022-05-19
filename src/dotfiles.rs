@@ -1,16 +1,10 @@
 use crate::{background::Position, value_or_default, values_or_default};
-use anyhow::{ensure, Result};
-use std::{fs, path::PathBuf, process};
+use anyhow::Result;
+use std::{fs, path::PathBuf};
 
 /// Generate config files from dotfiles
 #[derive(Debug, clap::Parser)]
 pub struct Dotfiles {
-    #[clap(long)]
-    repositories_path: Option<PathBuf>,
-    #[clap(long)]
-    config_files_dir: Option<PathBuf>,
-    #[clap(long)]
-    config_repository_url: Option<String>,
     #[clap(long)]
     temporary_project_dir: Option<PathBuf>,
     #[clap(long)]
@@ -37,9 +31,6 @@ pub struct Dotfiles {
 impl Dotfiles {
     pub fn run(
         self,
-        default_repositories_path: Option<PathBuf>,
-        default_config_files_dir: Option<PathBuf>,
-        default_config_repository_url: Option<String>,
         default_temporary_project_dir: Option<PathBuf>,
         default_editor: Option<String>,
         default_terminal: Option<String>,
@@ -51,24 +42,6 @@ impl Dotfiles {
         default_net_device: Option<String>,
         default_home_symbol: Option<String>,
     ) -> Result<()> {
-        let repositories_path = value_or_default(
-            self.repositories_path,
-            default_repositories_path,
-            "repositories_path",
-        )?;
-        let config_files_dir = value_or_default(
-            self.config_files_dir,
-            default_config_files_dir,
-            "config_files_dir",
-        )?;
-        let config_files_path = repositories_path.join(config_files_dir);
-        let config_repository_url = value_or_default(
-            self.config_repository_url,
-            default_config_repository_url,
-            "config_repository_url",
-        )?;
-        get_or_download_config_files(config_files_path, config_repository_url, repositories_path)?;
-
         let temporary_project_dir = value_or_default(
             self.temporary_project_dir,
             default_temporary_project_dir,
@@ -105,29 +78,6 @@ impl Dotfiles {
     }
 }
 
-fn get_or_download_config_files(
-    config_files_path: PathBuf,
-    config_repository_url: String,
-    repository_path: PathBuf,
-) -> Result<PathBuf> {
-    if config_files_path.exists() {
-        Ok(config_files_path)
-    } else {
-        log::info!("Downloading config files");
-        ensure!(
-            process::Command::new("git")
-                .arg("clone")
-                .arg(config_repository_url)
-                .current_dir(repository_path)
-                .status()?
-                .success(),
-            "cannot download config files"
-        );
-
-        Ok(config_files_path)
-    }
-}
-
 fn generate_cargo_temp(
     temporary_project_dir: PathBuf,
     editor: String,
@@ -141,7 +91,7 @@ fn generate_cargo_temp(
     fs::write(
         cargo_temp_path,
         format!(
-            include_str!("../configs/cargo-temp"),
+            include_str!("../templates/configs/cargo-temp"),
             temporary_project_dir = temporary_project_dir
                 .to_str()
                 .expect("temporary_project_dir contains non UTF-8 characters"),
@@ -180,7 +130,7 @@ fn generate_i3(
     fs::write(
         i3_path,
         format!(
-            include_str!("../configs/i3"),
+            include_str!("../templates/configs/i3"),
             background_command = background_command,
             fonts = fonts,
             fonts_size = fonts_size,
@@ -201,7 +151,10 @@ fn generate_i3status(net_device: String) -> Result<PathBuf> {
 
     fs::write(
         i3status_path.clone(),
-        format!(include_str!("../configs/i3status"), net_device = net_device,),
+        format!(
+            include_str!("../templates/configs/i3status"),
+            net_device = net_device,
+        ),
     )?;
 
     Ok(i3status_path)
@@ -224,7 +177,7 @@ fn generate_starship(home_symbol: String) -> Result<()> {
     fs::write(
         starship_path,
         format!(
-            include_str!("../configs/starship"),
+            include_str!("../templates/configs/starship"),
             home_symbol = home_symbol,
         ),
     )?;

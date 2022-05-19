@@ -62,9 +62,6 @@ fn main() -> Result<()> {
         ),
         Opt::Config => Config::create_from_dot(),
         Opt::Dotfiles(args) => args.run(
-            config.default_repositories_path,
-            config.config_files_dir,
-            config.config_repository_url,
             config.temporary_project_path,
             config.default_editor,
             config.default_terminal,

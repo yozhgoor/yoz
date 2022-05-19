@@ -32,10 +32,6 @@ pub struct Config {
     pub default_browser: Option<String>,
     #[serde(rename = "home_symbol")]
     pub default_home_symbol: Option<String>,
-    pub config_files_dir: Option<PathBuf>,
-    pub config_repository_url: Option<String>,
-    #[serde(rename = "repository_path")]
-    pub default_repositories_path: Option<PathBuf>,
     #[serde(rename = "net_device")]
     pub default_net_device: Option<String>,
     pub main_monitor: Option<Monitor>,
@@ -60,9 +56,6 @@ impl Config {
             default_fonts_size: None,
             default_browser: None,
             default_home_symbol: None,
-            config_files_dir: None,
-            config_repository_url: None,
-            default_repositories_path: None,
             default_net_device: None,
             main_monitor: None,
             external_monitor: None,
@@ -116,9 +109,6 @@ impl Config {
             default_fonts_size: Some(8),
             default_browser: Some("Firefox".to_string()),
             default_home_symbol: Some("yoz".to_string()),
-            config_files_dir: Some(PathBuf::from("config-files")),
-            config_repository_url: Some("git@github.com:yozhgoor/config-files.git".to_string()),
-            default_repositories_path: Some(PathBuf::from("/home/yozhgoor/repos")),
             default_net_device: Some("wlp1s0".to_string()),
             main_monitor: Some(Monitor {
                 name: "eDP-1".to_string(),
