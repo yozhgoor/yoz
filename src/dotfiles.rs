@@ -141,7 +141,7 @@ fn generate_cargo_temp(
     fs::write(
         cargo_temp_path,
         format!(
-            include_str!("../../config-files/cargo-temp"),
+            include_str!("../configs/cargo-temp"),
             temporary_project_dir = temporary_project_dir
                 .to_str()
                 .expect("temporary_project_dir contains non UTF-8 characters"),
@@ -180,7 +180,7 @@ fn generate_i3(
     fs::write(
         i3_path,
         format!(
-            include_str!("../../config-files/i3"),
+            include_str!("../configs/i3"),
             background_command = background_command,
             fonts = fonts,
             fonts_size = fonts_size,
@@ -201,10 +201,7 @@ fn generate_i3status(net_device: String) -> Result<PathBuf> {
 
     fs::write(
         i3status_path.clone(),
-        format!(
-            include_str!("../../config-files/i3status"),
-            net_device = net_device,
-        ),
+        format!(include_str!("../configs/i3status"), net_device = net_device,),
     )?;
 
     Ok(i3status_path)
@@ -227,7 +224,7 @@ fn generate_starship(home_symbol: String) -> Result<()> {
     fs::write(
         starship_path,
         format!(
-            include_str!("../../config-files/starship"),
+            include_str!("../configs/starship"),
             home_symbol = home_symbol,
         ),
     )?;
