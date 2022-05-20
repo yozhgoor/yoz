@@ -30,6 +30,8 @@ pub struct Config {
     pub default_fonts_size: Option<u32>,
     #[serde(rename = "browser")]
     pub default_browser: Option<String>,
+    #[serde(rename = "bar_font_size")]
+    pub default_bar_font_size: Option<u32>,
     #[serde(rename = "home_symbol")]
     pub default_home_symbol: Option<String>,
     #[serde(rename = "net_device")]
@@ -53,8 +55,9 @@ impl Config {
             default_editor: None,
             default_terminal: None,
             default_fonts: Vec::new(),
-            default_fonts_size: None,
+            default_bar_font_size: None,
             default_browser: None,
+            default_fonts_size: None,
             default_home_symbol: None,
             default_net_device: None,
             main_monitor: None,
@@ -107,6 +110,7 @@ impl Config {
                 "Font Awesome".to_string(),
             ],
             default_fonts_size: Some(8),
+            default_bar_font_size: Some(8),
             default_browser: Some("Firefox".to_string()),
             default_home_symbol: Some("yoz".to_string()),
             default_net_device: Some("wlp1s0".to_string()),

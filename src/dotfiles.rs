@@ -20,6 +20,8 @@ pub struct Dotfiles {
     #[clap(long)]
     fonts_size: Option<u32>,
     #[clap(long)]
+    bar_font_size: Option<u32>,
+    #[clap(long)]
     browser: Option<String>,
     #[clap(long)]
     net_device: Option<String>,
@@ -38,6 +40,7 @@ impl Dotfiles {
         default_bg_file_path: Option<PathBuf>,
         default_fonts: Vec<String>,
         default_fonts_size: Option<u32>,
+        default_bar_font_size: Option<u32>,
         default_browser: Option<String>,
         default_net_device: Option<String>,
         default_home_symbol: Option<String>,
@@ -60,6 +63,8 @@ impl Dotfiles {
         let fonts = values_or_default(self.fonts, default_fonts, "fonts")?;
         let fonts_size = value_or_default(self.fonts_size, default_fonts_size, "fonts_size")?;
         let browser = value_or_default(self.browser, default_browser, "browser")?;
+        let bar_font_size =
+            value_or_default(self.bar_font_size, default_bar_font_size, "bar_font_size")?;
         generate_i3(
             bg_position,
             bg_file_path,
@@ -67,6 +72,7 @@ impl Dotfiles {
             fonts_size,
             browser,
             bar_path,
+            bar_font_size,
         )?;
 
         generate_nvim()?;
@@ -110,6 +116,7 @@ fn generate_i3(
     fonts_size: u32,
     browser: String,
     bar_path: PathBuf,
+    bar_font_size: u32,
 ) -> Result<()> {
     let i3_path = xdg::BaseDirectories::with_prefix("i3")?.place_config_file("config")?;
     let background_command = format!(
@@ -135,6 +142,7 @@ fn generate_i3(
             fonts = fonts,
             fonts_size = fonts_size,
             browser = browser,
+            bar_font_size = bar_font_size,
             bar_path = bar_path
                 .to_str()
                 .expect("bar_path contains non UTF-8 characters"),
