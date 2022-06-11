@@ -12,4 +12,4 @@
         with:
           name: {build_name}
           path: |
-            target/{target}/release/{project_name}
+            target/{target}/release/{project_name}{extension}
