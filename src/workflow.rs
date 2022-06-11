@@ -166,7 +166,7 @@ jobs:
         job_name = build_linux_name,
         platform = "ubuntu-latest",
         target = "x86_64-unknown-linux-gnu",
-        build_title = "Build release (Windows)",
+        build_title = "Build release (Linux)",
         build_name = build_linux_name,
         project_name = project_name,
     )?;
@@ -177,10 +177,11 @@ jobs:
             include_str!("../templates/ci/release_build"),
             job_name = build_windows_name,
             platform = "windows-latest",
-            target = "x86_64-windows-msvc",
+            target = "x86_64-pc-windows-msvc",
             build_title = "Build release (Windows)",
             build_name = build_windows_name,
             project_name = project_name,
+            extension = ".exe",
         )?;
     }
 
@@ -194,6 +195,7 @@ jobs:
             build_title = "Build release (OSX)",
             build_name = build_osx_name,
             project_name = project_name,
+            extension = "",
         )?;
     }
 
