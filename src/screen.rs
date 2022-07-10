@@ -11,13 +11,13 @@ use std::{fmt, process, str::FromStr};
 #[derive(Debug, clap::Parser)]
 pub struct Screen {
     /// Enable the main screen and disable the external screen.
-    #[clap(long)]
+    #[clap(long, short = 'm')]
     main: bool,
     /// Enable the external screen and disable the main screen.
-    #[clap(long)]
+    #[clap(long, short = 'e')]
     external: bool,
     /// Set the refresh rate of the external monitor
-    #[clap(long, default_value_t = 60)]
+    #[clap(long)]
     rate: u8,
     /// Set the position of the external screen related to the position of the
     /// laptop screen.
