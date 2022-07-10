@@ -18,7 +18,7 @@ pub struct Screen {
     external: bool,
     /// Set the refresh rate of the external monitor
     #[clap(long)]
-    rate: u8,
+    rate: Option<u8>,
     /// Set the position of the external screen related to the position of the
     /// laptop screen.
     #[clap(long, default_value_t = Direction::Right)]
@@ -43,6 +43,7 @@ impl Screen {
         };
         let external_monitor_mode =
             format!("{}x{}", external_monitor.width, external_monitor.height);
+        let external_monitor_rate = format!("{}", self.rate.unwrap_or(external_monitor.rate));
 
         if self.main {
             ensure!(
@@ -75,7 +76,7 @@ impl Screen {
                     .arg("--mode")
                     .arg(external_monitor_mode)
                     .arg("--refresh")
-                    .arg(format!("{}", external_monitor.rate))
+                    .arg(external_monitor_rate)
                     .status()?
                     .success(),
                 "cannot enable external monitor",
@@ -98,7 +99,7 @@ impl Screen {
                     .arg("--mode")
                     .arg(external_monitor_mode)
                     .arg("--refresh")
-                    .arg(format!("{}", external_monitor.rate))
+                    .arg(external_monitor_rate)
                     .status()?
                     .success(),
                 "cannot enable external monitor"
