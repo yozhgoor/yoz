@@ -21,7 +21,7 @@ pub struct Screen {
     rate: Option<u8>,
     /// Set the position of the external screen related to the position of the
     /// laptop screen.
-    #[clap(long, default_value_t = Direction::Right)]
+    #[clap(long, default_value_t = Direction::Left)]
     direction: Direction,
 }
 
