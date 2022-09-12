@@ -27,10 +27,29 @@ pub struct Update {
 impl Update {
     pub fn run(self, aur_dir: Option<PathBuf>) -> Result<()> {
         if self.arch || self.all {
-            let mut command = process::Command::new("sudo");
-            command.args(["pacman", "--sync", "--refresh", "--sysupgrade", "--clean"]);
+            let mut update = process::Command::new("sudo");
+            update.args(["pacman", "--sync", "--refresh", "--sysupgrade", "--clean"]);
 
-            ensure!(command.status()?.success(), "cannot update ArchLinux");
+            ensure!(update.status()?.success(), "cannot update ArchLinux");
+
+            let mut cache = process::Command::new("sudo");
+            update.args(["pacman", "--sync", "--clean"]);
+
+            ensure!(
+                cache.status()?.success(),
+                "cannot clean pacman cache directory"
+            );
+
+            let mut orphans = process::Command::new("sudo");
+            orphans.args([
+                "pacman",
+                "--remove",
+                "--nosave",
+                "--recursive",
+                "$(pacman --query --unrequired --deps --quiet)",
+            ]);
+
+            ensure!(cache.status()?.success(), "cannot clean orphans packages");
         }
 
         if self.aur || self.all {
