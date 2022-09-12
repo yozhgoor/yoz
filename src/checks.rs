@@ -195,7 +195,7 @@ impl ChecksCommand {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum CheckKind {
     Check,
     Test,
