@@ -5,15 +5,9 @@ mod add;
 mod background;
 mod checks;
 mod config;
-mod dotfiles;
-mod install;
 mod launch;
 mod license;
-mod new;
 mod screen;
-mod shot;
-mod update;
-mod workflow;
 
 use crate::config::Config;
 
@@ -26,13 +20,8 @@ enum Opt {
     Background(background::Background),
     Checks(checks::Checks),
     Config,
-    Dotfiles(dotfiles::Dotfiles),
-    Install(install::Install),
     Launch(launch::Launch),
-    New(new::New),
     Screen(screen::Screen),
-    Shot(shot::Shot),
-    Update(update::Update),
 }
 
 fn main() -> Result<()> {
@@ -61,25 +50,8 @@ fn main() -> Result<()> {
             config.default_clippy_args,
         ),
         Opt::Config => Config::create_from_dot(),
-        Opt::Dotfiles(args) => args.run(
-            config.temporary_project_path,
-            config.default_editor,
-            config.default_terminal,
-            config.default_bg_position,
-            config.default_bg_file_path,
-            config.default_fonts,
-            config.default_fonts_size,
-            config.default_bar_font_size,
-            config.default_net_device,
-            config.default_home_symbol,
-            config.default_browser,
-        ),
-        Opt::Install(args) => args.run(config.aur_dir),
         Opt::Launch(args) => args.run(config.default_editor, config.default_terminal),
-        Opt::New(args) => args.run(config.default_full_name),
         Opt::Screen(args) => args.run(config.main_monitor, config.external_monitor),
-        Opt::Shot(args) => args.run(),
-        Opt::Update(args) => args.run(config.aur_dir),
     }
 }
 
