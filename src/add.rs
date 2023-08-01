@@ -1,4 +1,4 @@
-use crate::{license, set_working_dir, value_or_default, workflow};
+use crate::{license, set_working_dir, value_or_default};
 use anyhow::Result;
 use std::path;
 
@@ -40,21 +40,7 @@ impl Add {
             log::info!("Generating licenses");
             license::add_licenses(&working_dir, full_name)?;
         } else if self.ci {
-            log::info!("Generating CI files");
-            if self.lib {
-                workflow::add_lib_ci(&working_dir, self.no_windows, self.no_osx)?;
-            } else {
-                workflow::add_bin_ci(
-                    &working_dir,
-                    &cargo_metadata::MetadataCommand::new()
-                        .exec()?
-                        .root_package()
-                        .expect("cannot resolve root package")
-                        .name,
-                    self.no_windows,
-                    self.no_osx,
-                )?;
-            }
+            todo!("Generating CI files");
         } else {
             log::error!("Please select something to add");
         }
